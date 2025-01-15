@@ -15,3 +15,39 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+/* 
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes fade-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes fade-right {
+  0% { transform: translateX(-10%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 1.5s ease-in-out forwards;
+}
+
+.animate-fade-out {
+  animation: fade-out 1.5s ease-in-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 1.5s ease-in-out forwards;
+}
+
+.animate-fade-right{
+  animation: fade-right 1.5s ease-in-out backwards;
+} */
