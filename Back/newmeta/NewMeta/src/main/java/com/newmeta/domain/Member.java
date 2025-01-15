@@ -20,11 +20,11 @@ import lombok.ToString;
 @NoArgsConstructor
 @Entity
 public class Member {
+	
 	@Id
 	private String username; // ID
 	private String password; // PW
 	@Enumerated(EnumType.STRING)
 	private Role role; // 권한
-	private boolean enabled; // 로그인 여부
 
 }

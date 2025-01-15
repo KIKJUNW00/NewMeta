@@ -45,6 +45,7 @@ public class SecurityConfig { // 보안 설정 파일
 		
 		// 기본 로그인 기능을 사용
 		http.formLogin(form -> form.loginPage("/login").defaultSuccessUrl("/loginSuccess", false));
+		
 		http.exceptionHandling(ex -> ex.accessDeniedPage("/accessDenied"));
 
 		http.logout(logout -> logout.invalidateHttpSession(true) // 현재 브라우저와 연결된 세션 강제 종료

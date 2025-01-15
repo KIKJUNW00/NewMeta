@@ -23,6 +23,13 @@ public class MemberInitialize {
 			.username("admin") // id 설정
 			.password(encoder.encode("abcd")) // 비밀번호 설정 
 			.role(Role.ROLE_ADMIN) // 권한 설정
-			.enabled(true).build()); // 로그인 성공여부 설정
+			.build());
+		
+		memRepo.save(Member.builder()
+				.username("test") // id 설정
+				.password(encoder.encode("abcd")) // 비밀번호 설정 
+				.role(Role.ROLE_ADMIN) // 권한 설정
+				.build()); 
+		
 	}
 }
