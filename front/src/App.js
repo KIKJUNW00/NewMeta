@@ -1,79 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import mainLogo from './img/mainLogo1.png';
-import reallogo from './img/reallogo1.png';
+import { Route, Routes, BrowserRouter, Link } from 'react-router-dom';
+import LoginPage from './Pages/LoginPages';
+import AdminPage from './Pages/AdminPage';
 
-function App() {
-  const [showMainLogo, setShowMainLogo] = useState(true);
-  // const [showRealLogo, setShowRealLogo] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
 
-  useEffect(() => {
-    const timer1 = setTimeout(() => {
-      setShowMainLogo(false);
-      // setShowRealLogo(true);
-    }, 3000); // 3.0초 후 mainLogo가 사라짐
-    
-  
-    const timer2 = setTimeout(() => {
-      setShowLogin(true);
-    }, 3000); // 추가 3.0초 후 로그인 화면 표시
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
-  }, []);
-
+export default function App() {
   return (
-    <div className="h-screen bg-gradient-to-b
-     from-[#3182D0] via-[#3180CE] to-[#19426A] 
-     flex items-center justify-center">
-      <div className="text-center">
-        {/* mainLogo 애니메이션 */}
-        {showMainLogo &&(
-          <img
-            src={mainLogo}
-            alt="Main company logo"
-            className="animate-faderight"
-          />
-        )}
+    <div className='Main'>
+      <BrowserRouter>
+        <Routes>
+            
+            {/* 로그인 페이지 */}
+            <Route path="/" element={<LoginPage />} />
 
-        {/* 로그인 화면 */}
-        {showLogin && (
-          <div className="animate-slideup
-           bg-white p-6 rounded-lg">
-           
-              <img
-                src={reallogo}
-                alt="Login company logo"
-                className="mb-6 mx-auto"
-              />
-      
+            {/* 관리자 페이지 */}
+            <Route path = "/AdminPage" element={<AdminPage />} />
+            
 
-            <h2 className="text-2xl font-bold mb-4">로그인</h2>
-            <form>
-              <input
-                type="text"
-                placeholder="아이디"
-                className="w-full p-2 mb-4 border border-gray-300 rounded"
-              />
-              <input
-                type="password"
-                placeholder="비밀번호"
-                className="w-full p-2 mb-4 border border-gray-300 rounded"
-              />
-              <button
-                type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded w-full"
-              >
-                로그인
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
+        </Routes>
+      </BrowserRouter>
     </div>
   );
-}
+  
+};
 
-export default App;
+
+

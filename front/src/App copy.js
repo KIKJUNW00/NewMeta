@@ -40,31 +40,33 @@ function App() {
 
         {/* 로그인 화면 */}
         {showLogin && (
-          <div className="animate-slideup
-           bg-white p-6 rounded-lg">
+          <div className="animate-slideup bg-opacity-40
+                        bg-white py-11 rounded-lg w-">
            
               <img
                 src={reallogo}
                 alt="Login company logo"
-                className="mb-6 mx-auto"
+                className="mb-12 mx-0"
               />
       
 
-            <h2 className="text-2xl font-bold mb-4">로그인</h2>
+            <h2 className="text-2xl text-slate-950 font-bold mb-4">로그인</h2>
             <form>
               <input
                 type="text"
                 placeholder="아이디"
-                className="w-full p-2 mb-4 border border-gray-300 rounded"
+                className="w-3/4 p-2 mb-4 border border-gray-300 rounded-lg"
               />
               <input
                 type="password"
                 placeholder="비밀번호"
-                className="w-full p-2 mb-4 border border-gray-300 rounded"
+                className="w-3/4 p-2 mb-4 border border-gray-300 rounded-lg"
               />
+              <p className='mb-10 text-left ml-16 text-red-500 '>비밀번호를 입력하세요</p>
               <button
                 type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+                className="bg-blue-500 text-white
+                px-4 py-2 rounded-lg w-3/4"
               >
                 로그인
               </button>
