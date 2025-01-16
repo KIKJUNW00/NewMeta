@@ -56,7 +56,6 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
 		 // 시큐리티 세션에 등록한다.
 //		SecurityContextHolder.getContext().setAuthentication(auth); 
 		
-		
 		filterChain.doFilter(request, response);
 
 	}

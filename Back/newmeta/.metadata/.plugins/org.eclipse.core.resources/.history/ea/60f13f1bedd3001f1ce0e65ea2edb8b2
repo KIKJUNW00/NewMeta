@@ -38,7 +38,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
 		String jwtToken = srcToken.replace("Bearer ", "");
 		
 		// 토큰에서 usernanme 추출
-		String username = JWT.require(Algorithm.HMAC256("com.newmeta.jwt")).build().verify(jwtToken).getClaim("username").asString();
+		String username = JWT.require(Algorithm.HMAC256("com.TripOrganizer.jwt")).build().verify(jwtToken).getClaim("username").asString();
 		
 		Optional<Member> opt = memRepo.findById(username); // 토큰에서 얻은 username으로 DB를 검색
 		if(!opt.isPresent()) { // 사용자가 존재하지 않는다면
@@ -55,7 +55,6 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
 		
 		 // 시큐리티 세션에 등록한다.
 //		SecurityContextHolder.getContext().setAuthentication(auth); 
-		
 		
 		filterChain.doFilter(request, response);
 

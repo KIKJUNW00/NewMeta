@@ -1,6 +1,6 @@
 [ {
-  "version" : "8.13-20250114144848+0000",
-  "buildTime" : "20250114144848+0000",
+  "version" : "8.13-20250116001458+0000",
+  "buildTime" : "20250116001458+0000",
   "current" : false,
   "snapshot" : true,
   "nightly" : true,
@@ -9,9 +9,9 @@
   "rcFor" : "",
   "milestoneFor" : "",
   "broken" : false,
-  "downloadUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250114144848+0000-bin.zip",
-  "checksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250114144848+0000-bin.zip.sha256",
-  "wrapperChecksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250114144848+0000-wrapper.jar.sha256"
+  "downloadUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250116001458+0000-bin.zip",
+  "checksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250116001458+0000-bin.zip.sha256",
+  "wrapperChecksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250116001458+0000-wrapper.jar.sha256"
 }, {
   "version" : "8.13-milestone-2",
   "buildTime" : "20250110085439+0000",

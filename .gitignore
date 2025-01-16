@@ -11,6 +11,8 @@
 # production
 /build
 
+src/main/resources/application.properties
+
 # misc
 .env
 .DS_Store
