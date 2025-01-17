@@ -29,21 +29,21 @@ public class BoardController {
     @GetMapping
     public List<Board> getAllBoards() {
     	System.out.println("모든 게시글 조회");
-        return boardService.getAllBoards();
+        return boardService.getAllboards();
     }
 
     // 특정 게시글 조회 (GET /board/{id})
     @GetMapping("/{seq}")
     public Board getBoardById(@PathVariable Long seq) {
     	System.out.println(seq + "조회 성공");
-    	return boardService.getBoardById(seq);
+    	return boardService.getboardById(seq);
     }
 
     // 게시글 생성 (POST /board)
     @PostMapping
     public Board createBoard(@RequestBody Board board) {
     	System.out.println(board + "게시글 생성");
-        return boardService.saveBoard(board);
+        return boardService.saveboard(board);
     }
 
     
@@ -51,13 +51,13 @@ public class BoardController {
     @PutMapping("/{seq}")
     public Board updateBoard(@PathVariable Long seq, @RequestBody Board updatedBoard) {
         System.out.println(seq + " 게시글 수정");
-        return boardService.updateBoard(seq, updatedBoard);
+        return boardService.updateboard(seq, updatedBoard);
     }
 
     // 게시글 삭제 (DELETE /board/{seq})
     @DeleteMapping("/{seq}")
     public String deleteBoard(@PathVariable Long seq) {
-        boardService.deleteBoard(seq);
+    	boardService.deleteboard(seq);
         return seq + "번 게시글 삭제 완료";
     }
 }

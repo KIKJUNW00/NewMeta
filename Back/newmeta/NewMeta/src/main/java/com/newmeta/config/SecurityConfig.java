@@ -12,7 +12,7 @@ import org.springframework.security.web.access.intercept.AuthorizationFilter;
 
 import com.newmeta.config.filter.JWTAuthenticationFilter;
 import com.newmeta.config.filter.JWTAuthorizationFilter;
-import com.newmeta.persistence.MemberRepository;
+import com.newmeta.persistence.AdminRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,7 +27,7 @@ public class SecurityConfig { // 보안 설정 파일
 	private AuthenticationConfiguration authenticationConfiguration;
 
 	@Autowired
-	private MemberRepository memRepo;
+	private AdminRepository memRepo;
 
 	
 

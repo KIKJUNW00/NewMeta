@@ -15,7 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.newmeta.domain.Member;
+import com.newmeta.domain.Admin;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -36,9 +36,9 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		 // request에서 json 타입의 [username/password]를 읽어서 Member 객체를 생성한다.
 		ObjectMapper mapper = new ObjectMapper();
 		try {
-			Member member = mapper.readValue(request.getInputStream() ,Member.class);
+			Admin admin = mapper.readValue(request.getInputStream() ,Admin.class);
 			 // Security에게 자격 증명 요청에 필요한 객체 생성
-			Authentication authToken = new UsernamePasswordAuthenticationToken(member.getUsername(),member.getPassword());
+			Authentication authToken = new UsernamePasswordAuthenticationToken(admin.getUsername(),admin.getPassword());
 			// 인증 진행-> UserDetailsService의 loadUserByUsername에서 DB로부터 사용자 정보를 읽어온 뒤
 			// 사용자 입력 정보와 비교한 뒤 자격 증명에 성공하면 Authenticaiton객체를 만들어서리턴한다.
 			return authenticationManager.authenticate(authToken);

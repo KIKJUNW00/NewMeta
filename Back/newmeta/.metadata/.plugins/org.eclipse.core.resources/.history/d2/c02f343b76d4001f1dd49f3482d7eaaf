@@ -1,0 +1,50 @@
+package com.newmeta.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.newmeta.domain.Admin;
+import com.newmeta.persistence.AdminRepository;
+
+@Service
+public class AdminService {
+
+	@Autowired
+	private AdminRepository adminrepo;
+
+	// 모든 게시글 조회
+	public List<Admin> getAllAdmins() {
+		return adminrepo.findAll();
+	}
+
+	// 게시글 저장
+	public Admin saveAdmin(Admin board) {
+		return adminrepo.save(board);
+	}
+
+	// 특정 게시글 조회
+	public Admin getAdminById(Long seq) {
+		return adminrepo.findById(seq).orElseThrow(() -> new RuntimeException("Board not found"));
+	}
+
+	// 게시글 수정
+	public Admin updateAdmin(Long seq, Admin updatedBoard) {
+		// 기존 게시글 찾기
+		Admin board = adminrepo.findById(seq).orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));
+
+		// 수정할 내용 적용
+		if (updatedBoard.getName() != null) {
+	        board.setName(updatedBoard.getName());
+	    }
+
+		// 저장 후 반환
+		return adminrepo.save(board);
+	}
+
+	// 게시글 삭제
+	public void deleteAdmin(Long seq) {
+		adminrepo.deleteById(seq);
+	}
+}

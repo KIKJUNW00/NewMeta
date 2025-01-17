@@ -14,24 +14,24 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.newmeta.domain.Member;
-import com.newmeta.persistence.MemberRepository;
+import com.newmeta.domain.Admin;
+import com.newmeta.persistence.AdminRepository;
 
 
 @Service
 public class SecurityUserDetailsService implements UserDetailsService{
 	
 	@Autowired
-	private MemberRepository memRepo;
+	private AdminRepository memRepo;
 	
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException { // 사용자 이름(username)을 입력받아 해당 사용자의 정보를 반환
-		Member member = memRepo.findById(username) // username(Primary Key)으로 사용자를 조회
+		Admin admin = memRepo.findById(username) // username(Primary Key)으로 사용자를 조회
 								.orElseThrow(()->new UsernameNotFoundException("Not Found!"));
 		
 		return new User(
-				member.getUsername(), // 데이터베이스에서 가져온 username을 설정
-				member.getPassword(), // 데이터베이스에서 가져온 암호화된 비밀번호를 설정
-				AuthorityUtils.createAuthorityList(member.getRole().toString())); // 사용자의 권한(Role)을 GrantedAuthority 객체 리스트로 변환
+				admin.getUsername(), // 데이터베이스에서 가져온 username을 설정
+				admin.getPassword(), // 데이터베이스에서 가져온 암호화된 비밀번호를 설정
+				AuthorityUtils.createAuthorityList(admin.getRole().toString())); // 사용자의 권한(Role)을 GrantedAuthority 객체 리스트로 변환
 	}
 }

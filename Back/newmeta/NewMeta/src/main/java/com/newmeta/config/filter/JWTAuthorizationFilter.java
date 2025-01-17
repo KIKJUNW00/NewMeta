@@ -3,17 +3,14 @@ package com.newmeta.config.filter;
 import java.io.IOException;
 import java.util.Optional;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.newmeta.domain.Member;
-import com.newmeta.persistence.MemberRepository;
+import com.newmeta.domain.Admin;
+import com.newmeta.persistence.AdminRepository;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class JWTAuthorizationFilter extends OncePerRequestFilter {
 	
 	// 인가 설정을 위해 사용자의 Role 정보를 읽어 들이기 위한 객체 설정
-	private final MemberRepository memRepo;
+	private final AdminRepository memRepo;
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -40,12 +37,12 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
 		// 토큰에서 usernanme 추출
 		String username = JWT.require(Algorithm.HMAC256("com.newmeta.jwt")).build().verify(jwtToken).getClaim("username").asString();
 		
-		Optional<Member> opt = memRepo.findById(username); // 토큰에서 얻은 username으로 DB를 검색
+		Optional<Admin> opt = memRepo.findById(username); // 토큰에서 얻은 username으로 DB를 검색
 		if(!opt.isPresent()) { // 사용자가 존재하지 않는다면
 			filterChain.doFilter(request, response); // 필터를 그냥 통과
 			return;
 		}
-		Member findmember = opt.get();
+		Admin findmember = opt.get();
 		
 		// DB에서 읽은 사용자 정보를 이용해서 UserDetails 타입의 객체를 생성
 		User user = new User(findmember.getUsername(),findmember.getPassword(), AuthorityUtils.createAuthorityList(findmember.getRole().toString()));

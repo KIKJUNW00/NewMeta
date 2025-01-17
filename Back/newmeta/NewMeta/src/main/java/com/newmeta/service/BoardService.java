@@ -15,22 +15,22 @@ public class BoardService {
 	private BoardRepository boardrepo;
 
 	// 모든 게시글 조회
-	public List<Board> getAllBoards() {
+	public List<Board> getAllboards() {
 		return boardrepo.findAll();
 	}
 
 	// 게시글 저장
-	public Board saveBoard(Board board) {
+	public Board saveboard(Board board) {
 		return boardrepo.save(board);
 	}
 
 	// 특정 게시글 조회
-	public Board getBoardById(Long seq) {
+	public Board getboardById(Long seq) {
 		return boardrepo.findById(seq).orElseThrow(() -> new RuntimeException("Board not found"));
 	}
 
 	// 게시글 수정
-	public Board updateBoard(Long seq, Board updatedBoard) {
+	public Board updateboard(Long seq, Board updatedBoard) {
 		// 기존 게시글 찾기
 		Board board = boardrepo.findById(seq).orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));
 
@@ -44,7 +44,7 @@ public class BoardService {
 	}
 
 	// 게시글 삭제
-	public void deleteBoard(Long seq) {
+	public void deleteboard(Long seq) {
 		boardrepo.deleteById(seq);
 	}
 }
