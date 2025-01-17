@@ -31,6 +31,15 @@ public class Meta {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long seq; // 기본키
 	
+	@ManyToOne
+	@JoinColumn(name = "EPC_ID", referencedColumnName = "EPC_ID")
+	private Product product; // Foreign Key to Product (EPC_ID)
+
+	@ManyToOne
+	@JoinColumn(name = "type", referencedColumnName = "type")
+	private Eventtype eventtype; // Foreign Key to EventType (type)
+
+	
 	@Temporal(TemporalType.DATE) 
 	private Date eventTime; // 이벤트 발생 시간
 	private Double latitude; // 위도
@@ -38,20 +47,5 @@ public class Meta {
 	
 	private boolean cfStatus; // 위변조 여부
 	private boolean idStatus; // 불법유통 여부
-	
-	@ManyToOne
-	@JoinColumn(name = "epc_id")
-	private Product product; 
-
-	@ManyToOne
-	@JoinColumn(name = "type")
-	private Eventtype eventtype; 
-
-	@ManyToOne
-	@JoinColumn(name = "sta_id")
-	private Hub hub; 
-
-	
-	
 
 }

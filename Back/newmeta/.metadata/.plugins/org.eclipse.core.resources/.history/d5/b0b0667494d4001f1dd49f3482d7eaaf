@@ -31,7 +31,7 @@ public class Meta {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long seq; // 기본키
 	
-	@Temporal(TemporalType.DATE) 
+	@Temporal(TemporalType.DATE) d
 	private Date eventTime; // 이벤트 발생 시간
 	private Double latitude; // 위도
 	private Double longitude; // 경도
@@ -46,10 +46,6 @@ public class Meta {
 	@ManyToOne
 	@JoinColumn(name = "type")
 	private Eventtype eventtype; 
-
-	@ManyToOne
-	@JoinColumn(name = "sta_id")
-	private Hub hub; 
 
 	
 	

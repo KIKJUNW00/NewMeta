@@ -47,10 +47,6 @@ public class Meta {
 	@JoinColumn(name = "type")
 	private Eventtype eventtype; 
 
-	@ManyToOne
-	@JoinColumn(name = "sta_id")
-	private Hub hub; 
-
 	
 	
 
