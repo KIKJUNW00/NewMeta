@@ -3,7 +3,7 @@ import MapComponent from '../Util/MapComponent';
 
 export default function page2() {
   return (
-    <div>
+    <div className='w-full h-full'>
         <div>
            <MapComponent />
         </div> 

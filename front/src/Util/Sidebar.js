@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import logo1 from '../img/logo1.png';
-import Clock from '../PageElement/Clock';
+import Clock from './Clock';
 
 export default function Sidebar() {
   return (
@@ -16,14 +16,14 @@ export default function Sidebar() {
         {/* 1번 컨텐츠 */}
         <div className="bg-[#8297a1] text-white text-4xl transition-colors hover:bg-[#A5BFCC] flex items-center w-full h-16">
           <NavLink
-            to="/AdminPage/page"
+            to="/AdminPage/dashboard"
             className={({ isActive }) =>
               isActive
                 ? 'bg-[#A5BFCC] text-white w-full h-full flex items-center justify-center'
                 : 'text-white w-full h-full flex items-center justify-center'
             }
           >
-            1
+            대시보드
           </NavLink>
         </div>
 
@@ -37,7 +37,7 @@ export default function Sidebar() {
                 : 'text-white w-full h-full flex items-center justify-center'
             }
           >
-            2
+            지도
           </NavLink>
         </div>
 

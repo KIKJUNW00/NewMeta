@@ -14,7 +14,7 @@ export default function App() {
             {/* 로그인 페이지 */}
             <Route path="/" element={<LoginPage />} />
             {/* 관리자 페이지 */}
-            <Route path = "/AdminPage/*" element={<AdminPage />} />
+            <Route path = "AdminPage/*" element={<AdminPage />} />
             {/* 컨텐츠 페이지 */}
             
 

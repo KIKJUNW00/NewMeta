@@ -2,6 +2,15 @@ import React, { useEffect } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
+// Leaflet 마커 아이콘 경로 설정
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
+
 export default function MapComponent() {
   useEffect(() => {
     // 지도 초기화
@@ -23,14 +32,17 @@ export default function MapComponent() {
     };
   }, []);
 
-  console.log("MapComponent rendered");//
+  
   return (
-    // <div
-    //   id="map"
-    //   className="h-full w-full"
-    //   style={{ height: '100%', width: '100%' }}
-    // ></div>
+    <div
+      id="map"
+      className="h-full w-full"
+      style={{ height: '835px', width: '100%' }}
+    >
+      
+    </div>
+
+
     
-    <div id="map-container" style={{ height: "100%", width: "100%" }}>Map Here</div>//
   );
 }

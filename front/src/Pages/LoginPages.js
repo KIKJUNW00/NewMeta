@@ -40,8 +40,11 @@ export default function Login() {
                     }
                 } //옵션
             );
+            console.log('로그인 요청 성공:', resp); // 전체 응답 출력
+
             if (resp.status === 200){
                 alert('로그인 성공!');
+                console.log('로그인 성공:', resp.data || '응답 데이터가 비어 있습니다.');
 
                 // JWT 토큰을 서버에서 응답으로 받았다고 가정
                 const jwtToken = resp.headers.get('Authorization');  // 서버에서 JWT 토큰을 받은 경우
@@ -52,7 +55,7 @@ export default function Login() {
                 // 토큰이 성공적으로 저장되었음을 콘솔에 출력
                 console.log("JWT 토큰:", jwtToken);
                 console.log("유저이름: ", user.username);
-                navigate('/AdminPage', {state: {userData: resp.data} });
+                navigate('/AdminPage', {state: {userData:{ username: user.username }} });
             }
          } catch(error){
             if (error.response) {
