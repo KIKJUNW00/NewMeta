@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import mainLogo from '../img/mainLogo1.png';
 import reallogo from '../img/reallogo1.png';
@@ -48,9 +48,9 @@ export default function Login() {
                  // JWT 토큰을 로컬 스토리지에 저장
                 localStorage.setItem('authToken', jwtToken);
 
+
                 // 토큰이 성공적으로 저장되었음을 콘솔에 출력
                 console.log("JWT 토큰:", jwtToken);
-
                 console.log("유저이름: ", user.username);
                 navigate('/AdminPage', {state: {userData: resp.data} });
             }
@@ -91,7 +91,7 @@ export default function Login() {
 
   return (
     <div className="h-screen bg-gradient-to-b
-     from-[#3182D0] via-[#3180CE] to-[#19426A] 
+     from-[#4C585B] via-[#778892] to-[#2E3A3E]
      flex items-center justify-center">
       <div className="text-center">
         {/* mainLogo 애니메이션 */}
@@ -105,8 +105,8 @@ export default function Login() {
 
         {/* 로그인 화면 */}
         {showLogin && (
-          <div className="animate-slideup bg-opacity-40
-                        bg-white py-11 rounded-lg w-">
+          <div className="animate-slideup bg-opacity-60
+                        bg-white py-11 rounded-lg">
            
               <img
                 src={reallogo}
