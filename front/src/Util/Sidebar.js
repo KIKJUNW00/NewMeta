@@ -1,63 +1,114 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import logo1 from '../img/logo1.png';
+import logout from '../img/logout.png'
 import Clock from './Clock';
 
 export default function Sidebar() {
+
+  // 관리자이름 가져오기
+  const location = useLocation();
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('userData');
+    return savedUser ? JSON.parse(savedUser) : location.state?.userData || { username: '' };
+  });
+
+  useEffect(() => {
+    if (!user.username) {
+      const savedUser = localStorage.getItem('userData');
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser); // localStorage에서 가져온 값으로 업데이트
+        console.log('로컬 스토리지에서 유저 데이터 로드:', parsedUser);
+      } else {
+        console.log('유저 데이터가 없습니다. 로그인 필요.');
+      }
+    }
+  }, [user.username]);
+
+
   return (
     <div className="flex flex-col h-full">
       {/* 상단 로고 */}
       <div className="flex justify-center mt-10 mb-20">
-        <img src={logo1} alt="Logo"></img>
+        <img src={logo1}
+          alt="Logo"
+          className="w-[90%] object-contain" // 로고를 가로로 작게 설정
+        />
       </div>
+
+      {/* 프로필 */}
+      <div className='flex items-center justify-center'>
+
+        {user.username ? `${user.username}` : ''}
+      </div>
+
 
       {/* 중간 메뉴 */}
       <div className="flex-1">
         {/* 1번 컨텐츠 */}
-        <div className="bg-[#8297a1] text-white text-4xl transition-colors hover:bg-[#A5BFCC] flex items-center w-full h-16">
+        <div className="bg-[#2e3b4e] transition-colors hover:bg-[#3a4a63] flex items-center w-full h-16">
           <NavLink
             to="/AdminPage/dashboard"
             className={({ isActive }) =>
               isActive
-                ? 'bg-[#A5BFCC] text-white w-full h-full flex items-center justify-center'
-                : 'text-white w-full h-full flex items-center justify-center'
+                ? 'bg-[#3a4a63] w-full h-full flex items-center justify-center'
+                : 'w-full h-full flex items-center justify-center'
             }
           >
-            대시보드
+            <p className='text-white  text-xl'
+            >
+              HOME
+            </p>
           </NavLink>
         </div>
 
         {/* 2번 컨텐츠 */}
-        <div className="bg-[#8297a1] text-white text-4xl transition-colors hover:bg-[#A5BFCC] flex items-center w-full h-16">
+        <div className="bg-[#2e3b4e] transition-colors hover:bg-[#3a4a63] flex items-center w-full h-16">
           <NavLink
             to="/AdminPage/page2"
             className={({ isActive }) =>
               isActive
-                ? 'bg-[#A5BFCC] text-white w-full h-full flex items-center justify-center'
-                : 'text-white w-full h-full flex items-center justify-center'
+                ? 'bg-[#3a4a63] w-full h-full flex items-center justify-center'
+                : 'w-full h-full flex items-center justify-center'
             }
           >
-            지도
+            <p className='text-white  text-xl'
+            >
+              HOME
+            </p>
           </NavLink>
         </div>
 
         {/* 3번 컨텐츠 */}
-        <div className="bg-[#8297a1] text-white text-4xl transition-colors hover:bg-[#A5BFCC] flex items-center w-full h-16">
+        <div className="bg-[#2e3b4e] transition-colors hover:bg-[#3a4a63] flex items-center w-full h-16">
           <NavLink
             to="/AdminPage/page3"
             className={({ isActive }) =>
               isActive
-                ? 'bg-[#A5BFCC] text-white w-full h-full flex items-center justify-center'
-                : 'text-white w-full h-full flex items-center justify-center'
+                ? 'bg-[#3a4a63] w-full h-full flex items-center justify-center'
+                : 'w-full h-full flex items-center justify-center'
             }
           >
-            3
+            <p className='text-white  text-xl'
+            >
+              HOME
+            </p>
           </NavLink>
         </div>
       </div>
 
+      {/* 로그아웃 */}
+      <div className="flex justify-center mb-5">
+        <img src={logout}
+          alt='로그아웃'
+          className="w-8 h-8"
+        />
+      </div>
+
       {/* 하단 Clock */}
-      <div className="flex justify-center text-xl font-bold mb-5">
+      <div className="flex justify-center text-xl font-bold text-white mb-5">
         <Clock />
       </div>
     </div>

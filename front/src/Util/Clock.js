@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
 
 export default function Clock() {
-    const [time, setTime] = useState(new Date().toLocaleString());
+  const [date, setDate] = useState(new Date());
 
-    useEffect(() => {
-      // 1초마다 현재 시간을 업데이트하는 타이머 설정
-      const timer = setInterval(() => {
-        setTime(new Date().toLocaleString());
-      }, 1000);
-  
-      // 컴포넌트가 언마운트될 때 타이머를 정리
-      console.log("Clock rendered");//
-      return () => clearInterval(timer); // 클리어 하기 전까지는 계속 돈다.
-    }, []);
-  
-    return (
-      <div>
-        {time}
+  useEffect(() => {
+    // 1초마다 현재 시간을 업데이트하는 타이머 설정
+    const timer = setInterval(() => {
+      setDate(new Date());
+    }, 1000);
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center text-white">
+      {/* 날짜 */}
+      <div className="text-lg font-semibold">
+        {date.toLocaleDateString()} {/* 날짜만 표시 */}
       </div>
-    );
+      {/* 시간 */}
+      <div className="text-lg font-semibold">
+        {date.toLocaleTimeString()} {/* 시간만 표시 */}
+      </div>
+    </div>
+  );
 }

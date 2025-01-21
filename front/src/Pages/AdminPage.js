@@ -27,42 +27,37 @@ export default function AdminPage() {
       }
     }
   }, [user.username]);
-  
+
 
   // -------------------------------------------------------------------------
 
   return (
     <div className='h-screen bg-white flex'>
-          {/* Sidebar */}
-          <div className='h-full w-2/12 
-                      bg-[#708285]'> 
-            <Sidebar />
-          </div>
+      {/* Sidebar */}
+      <div className='h-full w-1/12 
+                      bg-[#2e3b4e]'>
+        <Sidebar />
+      </div>
 
-            {/* 메인 컨텐츠 */}
-          <div className='flex flex-col w-full h-full'>
+      {/* 메인 컨텐츠 */}
+      <div className='flex flex-col w-full h-full'>
 
-              {/* 상단 바 */}
-              <div className='h-16 w-full mb-5 bg-[#A5BFCC] '>
-              {user.username ? `안녕하세요, ${user.username}님!` : '로그인이 필요합니다.'}
-              </div>
+        {/* 컨텐츠 스크린 */}
+        <div className='flex-1 h-full
+                       bg-gray-200 overflow-auto '>
 
-              {/* 컨텐츠 스크린 */}
-              <div className='flex-1 h-full
-                             bg-gray-200 overflow-auto '>
+          <Routes>
+            {/* 다른 경로도 필요하면 여기에 추가 */}
+            <Route path="dashboard" element={<DashBoard />} />
+            <Route path="page2" element={<Page2 />} />
+            <Route path="page3" element={<Page3 />} />
+          </Routes>
+        </div>
 
-                <Routes>
-                  {/* 다른 경로도 필요하면 여기에 추가 */}
-                  <Route path="dashboard" element={<DashBoard />} />
-                  <Route path="page2" element={<Page2 />} />
-                  <Route path="page3" element={<Page3 />} />
-                </Routes>
-              </div>
-              
-          </div>
+      </div>
 
-                                
-       
+
+
     </div>
   )
 }
