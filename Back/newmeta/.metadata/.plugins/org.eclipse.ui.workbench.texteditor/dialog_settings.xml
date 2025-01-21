@@ -3,10 +3,12 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="true"/>
 	<list key="replacehistory">
+		<item value="review"/>
 		<item value="board"/>
 		<item value="boardrepo"/>
 	</list>
 	<list key="searchhistory">
+		<item value="content"/>
 		<item value="admin"/>
 		<item value="Admin"/>
 		<item value="adminrepo"/>

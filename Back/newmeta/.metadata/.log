@@ -2567,3 +2567,12 @@ java.lang.NullPointerException: Cannot invoke "org.eclipse.e4.ui.model.applicati
 	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:668)
 	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:605)
 	at org.eclipse.equinox.launcher.Main.run(Main.java:1481)
+
+!ENTRY org.eclipse.jdt.junit 4 0 2025-01-21 11:45:40.286
+!MESSAGE No tests found with test runner 'JUnit 5'.
+
+!ENTRY org.eclipse.jdt.junit 4 0 2025-01-21 11:46:16.508
+!MESSAGE No tests found with test runner 'JUnit 5'.
+
+!ENTRY org.eclipse.jdt.junit 4 0 2025-01-21 11:47:04.674
+!MESSAGE No tests found with test runner 'JUnit 5'.
