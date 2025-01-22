@@ -41,9 +41,7 @@ public class ProductService {
         if (updatedProduct.getProductName() != null) {
             product.setProductName(updatedProduct.getProductName());
         }
-        if (updatedProduct.getProductSerial() != null) {
-            product.setProductSerial(updatedProduct.getProductSerial());
-        }
+        
 
         // 저장 후 반환
         return productRepo.save(product);

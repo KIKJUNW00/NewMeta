@@ -1,6 +1,6 @@
 [ {
-  "version" : "8.13-20250119001633+0000",
-  "buildTime" : "20250119001633+0000",
+  "version" : "8.13-20250122001952+0000",
+  "buildTime" : "20250122001952+0000",
   "current" : false,
   "snapshot" : true,
   "nightly" : true,
@@ -9,9 +9,51 @@
   "rcFor" : "",
   "milestoneFor" : "",
   "broken" : false,
-  "downloadUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250119001633+0000-bin.zip",
-  "checksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250119001633+0000-bin.zip.sha256",
-  "wrapperChecksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250119001633+0000-wrapper.jar.sha256"
+  "downloadUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250122001952+0000-bin.zip",
+  "checksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250122001952+0000-bin.zip.sha256",
+  "wrapperChecksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.13-20250122001952+0000-wrapper.jar.sha256"
+}, {
+  "version" : "8.13-milestone-3",
+  "buildTime" : "20250121164636+0000",
+  "current" : false,
+  "snapshot" : false,
+  "nightly" : false,
+  "releaseNightly" : false,
+  "activeRc" : false,
+  "rcFor" : "",
+  "milestoneFor" : "8.13",
+  "broken" : false,
+  "downloadUrl" : "https://services.gradle.org/distributions/gradle-8.13-milestone-3-bin.zip",
+  "checksumUrl" : "https://services.gradle.org/distributions/gradle-8.13-milestone-3-bin.zip.sha256",
+  "wrapperChecksumUrl" : "https://services.gradle.org/distributions/gradle-8.13-milestone-3-wrapper.jar.sha256"
+}, {
+  "version" : "8.12.1-milestone-1",
+  "buildTime" : "20250121110021+0000",
+  "current" : false,
+  "snapshot" : false,
+  "nightly" : false,
+  "releaseNightly" : false,
+  "activeRc" : false,
+  "rcFor" : "",
+  "milestoneFor" : "8.12.1",
+  "broken" : false,
+  "downloadUrl" : "https://services.gradle.org/distributions/gradle-8.12.1-milestone-1-bin.zip",
+  "checksumUrl" : "https://services.gradle.org/distributions/gradle-8.12.1-milestone-1-bin.zip.sha256",
+  "wrapperChecksumUrl" : "https://services.gradle.org/distributions/gradle-8.12.1-milestone-1-wrapper.jar.sha256"
+}, {
+  "version" : "8.12.1-20250120121122+0000",
+  "buildTime" : "20250120121122+0000",
+  "current" : false,
+  "snapshot" : true,
+  "nightly" : false,
+  "releaseNightly" : true,
+  "activeRc" : false,
+  "rcFor" : "",
+  "milestoneFor" : "",
+  "broken" : false,
+  "downloadUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.12.1-20250120121122+0000-bin.zip",
+  "checksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.12.1-20250120121122+0000-bin.zip.sha256",
+  "wrapperChecksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.12.1-20250120121122+0000-wrapper.jar.sha256"
 }, {
   "version" : "8.13-milestone-2",
   "buildTime" : "20250110085439+0000",
@@ -68,20 +110,6 @@
   "downloadUrl" : "https://services.gradle.org/distributions/gradle-8.12-rc-2-bin.zip",
   "checksumUrl" : "https://services.gradle.org/distributions/gradle-8.12-rc-2-bin.zip.sha256",
   "wrapperChecksumUrl" : "https://services.gradle.org/distributions/gradle-8.12-rc-2-wrapper.jar.sha256"
-}, {
-  "version" : "8.12-20241214011652+0000",
-  "buildTime" : "20241214011652+0000",
-  "current" : false,
-  "snapshot" : true,
-  "nightly" : false,
-  "releaseNightly" : true,
-  "activeRc" : false,
-  "rcFor" : "",
-  "milestoneFor" : "",
-  "broken" : false,
-  "downloadUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.12-20241214011652+0000-bin.zip",
-  "checksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.12-20241214011652+0000-bin.zip.sha256",
-  "wrapperChecksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-8.12-20241214011652+0000-wrapper.jar.sha256"
 }, {
   "version" : "8.12-rc-1",
   "buildTime" : "20241212152352+0000",

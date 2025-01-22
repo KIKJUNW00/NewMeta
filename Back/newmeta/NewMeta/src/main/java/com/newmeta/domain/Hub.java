@@ -19,7 +19,8 @@ import lombok.ToString;
 public class Hub {
 	
 	@Id
-	private String staId; // 거점 아이디
+	private Long hubId;
+	private String hubName;
 	private Double latitude; // 위도
 	private Double longitude; // 경도
 
