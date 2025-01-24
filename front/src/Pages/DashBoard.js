@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import MapComponent from '../Util/MapComponent';
 import MapComponent2 from '../Util/MapComponent2'
 import Chart1 from '../Util/Chart1'
 import CircleLegend from '../Util/CircleLegend';
-import Board from '../Util/Board';
-import BoardX from '../Util/BoardX'
+import {Board} from '../Util/Boards';
+import {BoardX} from '../Util/Boards'
 
 export default function DashBoard() {
+
+  const [readPoints, setReadPoints] = useState([]); // 선택된 readPoints 관리
+
   return (
     <div className="h-screen bg-gray-100 flex items-center justify-center">
       {/* 전체 배경 */}
@@ -51,7 +54,7 @@ export default function DashBoard() {
             <div className='flex-1 flex-col'>
               <h2 className="text-lg font-bold text-gray-700">EPC데이터</h2>
 
-              <Board />
+              <Board onProductClick={(points) => setReadPoints(points)} />
             </div>
 
           </div>
@@ -64,7 +67,7 @@ export default function DashBoard() {
               <div className="flex-1 border-solid border-2 border-black
                               overflow-hidden">
 
-                <MapComponent2 />
+                <MapComponent2 readPoints={readPoints} />
               </div>
             </div>
 

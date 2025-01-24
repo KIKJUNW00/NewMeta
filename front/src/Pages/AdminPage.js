@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from '../Util/Sidebar';
 import { Routes, Route } from 'react-router-dom';
 import DashBoard from '../Pages/DashBoard';
-import Page2 from '../Pages/Page2'
+import SCM from './SCM'
 import Page3 from '../Pages/Page3'
 
 export default function AdminPage() {
@@ -49,7 +49,7 @@ export default function AdminPage() {
           <Routes>
             {/* 다른 경로도 필요하면 여기에 추가 */}
             <Route path="dashboard" element={<DashBoard />} />
-            <Route path="page2" element={<Page2 />} />
+            <Route path="scm" element={<SCM />} />
             <Route path="page3" element={<Page3 />} />
           </Routes>
         </div>
