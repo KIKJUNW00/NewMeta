@@ -1,0 +1,93 @@
+package com.newmeta.service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.domain.dto.ProductEventLogDTO;
+import com.newmeta.persistence.ProductEventLogRepository;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class ProductEventLogService {
+
+	@PersistenceContext
+	private final EntityManager entityManager; // JPA Persistence Context
+    private final ProductEventLogRepository productEventLogRepo;
+    
+    
+// // 제품명과 EPC 코드만 반환 (페이지네이션 적용)
+//    public Page<ProductEventLogDTO> getPagedProductNamesAndEpcCodes(int page) {
+//        Pageable pageable = PageRequest.of(page, 30); // 페이지 번호와 30개씩 제한
+//        return productEventLogRepo.findAll(pageable)
+//                .map(log -> new ProductEventLogDTO(
+//                        null, // pageNo는 사용하지 않으므로 null
+//                        log.getProduct().getEpcCode(),
+//                        log.getProduct().getProductName(),
+//                        null, // hubType은 사용하지 않으므로 null
+//                        null, // eventType은 사용하지 않으므로 null
+//                        null, // eventTime은 사용하지 않으므로 null
+//                        null, // latitude은 사용하지 않으므로 null
+//                        null, // longitude은 사용하지 않으므로 null
+//                        false, // cfStatus는 사용하지 않으므로 기본값 false
+//                        false  // idStatus는 사용하지 않으므로 기본값 false
+//                ));
+//    }
+    
+    @Transactional(readOnly = true)
+    public Page<ProductEventLogDTO> getPagedLogs(Pageable pageable) {
+        return productEventLogRepo.findAll(pageable)
+                .map(this::convertToDTO); // 엔티티를 DTO로 변환
+    }
+
+    // 엔티티를 DTO로 변환하는 메서드
+    private ProductEventLogDTO convertToDTO(ProductEventLog log) {
+        return new ProductEventLogDTO(
+                log.getSeq(),
+                log.getEventTime().toString(),
+                log.isCfStatus(),
+                log.isIdStatus(),
+                log.getProduct().getEpcCode(),
+                log.getProduct().getProductName(),
+                log.getHub().getHubName(),
+                log.getEvent().getEventType(),
+                log.getHub().getLatitude(),
+                log.getHub().getLongitude()
+        );
+    }
+
+    // 모든 이벤트 로그 조회
+    public List<ProductEventLog> findAllLogs() {
+        return productEventLogRepo.findAll();
+    }
+
+    // 특정 ID로 이벤트 로그 조회
+    public Optional<ProductEventLog> findLogById(Long seq) {
+        return productEventLogRepo.findById(seq);
+    }
+
+    // 특정 EPC 코드로 이벤트 로그 조회
+    public List<ProductEventLog> findLogsByEpcCode(String epcCode) {
+        return productEventLogRepo.findByProductEpcCode(epcCode);
+    }
+
+    // 새로운 이벤트 로그 저장
+    public ProductEventLog saveLog(ProductEventLog log) {
+        return productEventLogRepo.save(log);
+    }
+
+    public void deleteLog(Long id) {
+    	productEventLogRepo.deleteById(id);
+    }
+}
