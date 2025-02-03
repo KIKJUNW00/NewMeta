@@ -1,0 +1,24 @@
+package com.newmeta;
+
+import jakarta.annotation.PostConstruct;
+
+@PostConstruct
+public void testSave() {
+    Product product = new Product("test_epc", "Test Product");
+    Hub hub = new Hub(null, "Test Hub", 37.0, 127.0);
+    Event event = new Event(null, "Test Event");
+
+    ProductEventLog eventLog = ProductEventLog.builder()
+            .product(product)
+            .hub(hub)
+            .event(event)
+            .eventTime("2025-01-28 14:00")
+            .build();
+
+    try {
+        productEventLogRepository.save(eventLog);
+        System.out.println("Test save successful: " + eventLog);
+    } catch (Exception e) {
+        System.out.println("Test save failed: " + e.getMessage());
+    }
+}

@@ -1,0 +1,91 @@
+package com.newmeta.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.Dummy;
+import com.newmeta.domain.Event;
+import com.newmeta.domain.Hub;
+import com.newmeta.domain.Product;
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.persistence.AnomalyLogRepository;
+import com.newmeta.persistence.ProductEventLogRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ProductEventLogService {
+
+    private final ProductEventLogRepository productEventLogRepo;
+    private final ProductService productService;
+    private final HubService hubService;
+    private final EventService eventService;
+    private final AnomalyLogRepository anomalyLogRepo;
+
+    /**
+     * ProductEventLog 저장
+     */
+    @Transactional
+    public void saveProductEventLog(Dummy dummy) {
+        try {
+            // 엔티티 저장 또는 조회
+            Product product = productService.saveIfNotExists(dummy.getEpcCode(), dummy.getProductName());
+            Hub hub = hubService.saveIfNotExists(dummy.getHubType(), dummy.getLatitude(), dummy.getLongitude());
+            Event event = eventService.saveIfNotExists(dummy.getEventType());
+
+            // ProductEventLog 생성 및 저장
+            ProductEventLog eventLog = ProductEventLog.builder()
+                    .product(product)
+                    .hub(hub)
+                    .event(event)
+                    .eventTime(dummy.getEventTime())
+                    .build();
+
+            productEventLogRepo.save(eventLog);
+
+        } catch (Exception e) {
+            log.error("Error saving ProductEventLog for dummy: {}", dummy, e);
+            handleAnomaly(dummy, e.getMessage());
+        }
+    }
+
+    /**
+     * 이상 데이터 처리
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void handleAnomaly(Dummy dummy, String reason) {
+        try {
+            ProductEventLog anomalyLog = ProductEventLog.builder()
+                    .product(new Product(dummy.getEpcCode(), dummy.getProductName()))
+                    .hub(new Hub(null, dummy.getHubType(), dummy.getLatitude(), dummy.getLongitude()))
+                    .event(new Event(null, dummy.getEventType()))
+                    .eventTime(dummy.getEventTime())
+                    .build();
+
+            productEventLogRepo.save(anomalyLog);
+
+            AnomalyLog anomaly = AnomalyLog.builder()
+                    .anomalyType("Data Processing Error")
+                    .reason(reason)
+                    .productEventLog(anomalyLog)
+                    .build();
+
+            anomalyLogRepo.save(anomaly);
+
+        } catch (Exception e) {
+            log.error("Error saving anomaly for dummy: {}", dummy, e);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductEventLog> findLogsByEpcCodeAndNotEventType(String epcCode, String eventType) {
+        return productEventLogRepo.findByProductEpcCodeAndEventEventTypeNot(epcCode, eventType);
+    }
+}

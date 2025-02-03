@@ -1,0 +1,65 @@
+package com.newmeta.service;
+
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.dto.AnomalyDTO;
+import com.newmeta.persistence.AnomalyLogRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.util.Date;
+import java.util.List;
+
+/**
+ * 📌 이상 탐지 서비스
+ * ✅ 이상 탐지 조회 및 삭제 로직 구현
+ */
+@Service
+@RequiredArgsConstructor
+public class AnomalyLogService {
+
+    private final AnomalyLogRepository anomalyLogRepository;
+
+    /**
+     * 🚀 모든 이상 탐지 데이터 조회 (페이징 포함)
+     */
+    public Page<AnomalyDTO> getAllAnomalyDetails(Pageable pageable) {
+        return anomalyLogRepository.findAllAnomalyDetails(pageable);
+    }
+
+    /**
+     * 🚀 특정 EPC 코드로 이상 탐지 조회
+     */
+    public List<AnomalyLog> getAnomaliesByEpc(String epcCode) {
+        return anomalyLogRepository.findByEpcCode(epcCode);
+    }
+
+    /**
+     * 🚀 특정 제품명으로 이상 탐지 조회
+     */
+    public List<AnomalyLog> getAnomaliesByProduct(String productName) {
+        return anomalyLogRepository.findByAnomalyProductName(productName);
+    }
+
+    /**
+     * 🚀 국가별 이상 탐지 조회
+     */
+    public List<AnomalyLog> getAnomaliesByCountry(String country) {
+        return anomalyLogRepository.findByCountry(country);
+    }
+
+    /**
+     * 🚀 특정 날짜 범위의 이상 탐지 조회
+     */
+    public List<AnomalyLog> getAnomaliesByDateRange(Date startDate, Date endDate) {
+        return anomalyLogRepository.findByAnomalyTimestampBetween(startDate, endDate);
+    }
+
+    /**
+     * 🚀 특정 이상 탐지 삭제
+     */
+    public void deleteAnomaly(Long anomalyId) {
+        anomalyLogRepository.deleteById(anomalyId);
+    }
+}

@@ -1,0 +1,37 @@
+package com.newmeta.service;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.dto.AnomalyDTO;
+import com.newmeta.persistence.AnomalyLogRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class AnomalyLogService {
+
+    private final AnomalyLogRepository anomalyLogRepo;
+
+    // ✅ 모든 이상치 데이터 조회
+    public List<AnomalyDTO> getAllAnomalyDetails() {
+        return Optional.ofNullable(anomalyLogRepo.findAllAnomalyDetails())
+                       .orElseThrow(() -> new RuntimeException("📢 이상치 데이터가 없습니다."));
+    }
+
+    // ✅ EPC 코드로 특정 이상 로그 검색
+    public List<AnomalyLog> getAnomaliesByEpc(String epcCode) {
+        return Optional.ofNullable(anomalyLogRepo.findByEpcCode(epcCode))
+                       .orElseThrow(() -> new RuntimeException("🚨 해당 EPC 코드에 대한 이상치 로그가 없습니다: " + epcCode));
+    }
+
+    // ✅ 제품명으로 특정 이상 로그 검색 (부분 검색 가능)
+    public List<AnomalyLog> getAnomaliesByProduct(String productName) {
+        return Optional.ofNullable(anomalyLogRepo.findByAnomalyProductNameContaining(productName))
+                       .orElseThrow(() -> new RuntimeException("🔍 해당 제품명에 대한 이상치 로그가 없습니다: " + productName));
+    }
+}

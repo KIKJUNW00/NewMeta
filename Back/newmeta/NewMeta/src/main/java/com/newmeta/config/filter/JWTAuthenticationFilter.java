@@ -32,7 +32,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
 	@Override
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-		
+		log.info("🔍 [로그인 시도] JWTAuthenticationFilter 실행됨");
 		 // request에서 json 타입의 [username/password]를 읽어서 Member 객체를 생성한다.
 		ObjectMapper mapper = new ObjectMapper();
 		try {
@@ -62,7 +62,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		 String token = JWT.create()
 						 .withExpiresAt(new Date(System.currentTimeMillis()+1000*60*100))
 						 .withClaim("username", user.getUsername())
-						 .sign(Algorithm.HMAC256("com.TripOrganizer.jwt"));
+						 .sign(Algorithm.HMAC256("com.newmeta.jwt"));
 		 response.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
 		 response.setStatus(HttpStatus.OK.value());
 		 response.getWriter().write(user.getUsername());

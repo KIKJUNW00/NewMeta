@@ -1,0 +1,36 @@
+package com.newmeta.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class WebSocketService {
+
+    private final SimpMessagingTemplate messagingTemplate;
+    private final ObjectMapper objectMapper;
+
+    public void sendAnomalyAlert(Map<String, Object> anomalyData) {
+        try {
+            messagingTemplate.convertAndSend("/topic/anomalyAlerts", anomalyData);
+            log.info("📡 WebSocket - 이상 탐지 알림 전송 완료: {}", anomalyData);
+        } catch (Exception e) {
+            log.error("❌ WebSocket 전송 오류", e);
+        }
+    }
+
+    public void sendRealTimeSCMData(Map<String, Object> scmData) {
+        try {
+            messagingTemplate.convertAndSend("/topic/scmDataUpdate", scmData);
+            log.info("📡 WebSocket - SCM 데이터 전송 완료: {}", scmData);
+        } catch (Exception e) {
+            log.error("❌ WebSocket 전송 오류", e);
+        }
+    }
+}

@@ -1,0 +1,27 @@
+package com.newmeta.persistence;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.dto.AnomalyDTO;
+
+public interface AnomalyLogRepository extends JpaRepository<AnomalyLog, Long> {
+	
+	@Query("SELECT new com.newmeta.domain.dto.AnomalyDTO(a.anomalyId, a.anomalyType, a.reason, " +
+		       "a.epcCode, a.anomalyProductName, a.anomalyEventType, a.anomalyHub, a.latitude, a.longitude, a.anomalyTimestamp) " +
+		       "FROM AnomalyLog a")
+		List<AnomalyDTO> findAllAnomalyDetails();
+
+
+	 
+	List<AnomalyLog> findByEpcCode(String epcCode);
+	List<AnomalyLog> findByAnomalyProductNameContaining(String anomalyProductName);
+	Optional<AnomalyLog> findByEpcCodeAndAnomalyEventType(String epcCode, String anomalyEventType);
+	boolean existsByEpcCode(String epcCode);
+
+
+}

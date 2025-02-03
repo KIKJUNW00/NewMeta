@@ -1,0 +1,56 @@
+package com.newmeta.controller;
+
+import com.newmeta.service.SCMDataService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+@RestController
+@RequestMapping("/api/scm")
+@RequiredArgsConstructor
+public class SCMController {
+
+    private final SCMDataService scmDataService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    /**
+     * ✅ 기존 REST API 방식으로 SCM 데이터 조회
+     */
+    @GetMapping("/data")
+    public @ResponseBody Map<String, Object> getSCMData() {
+        return scmDataService.getSCMData();
+    }
+
+    /**
+     * ✅ anomaly_log에서 이상 탐지 데이터 조회
+     */
+    @GetMapping("/anomalies")
+    public List<Map<String, Object>> getAnomalyData() {
+        return scmDataService.getAnomalyData(); // 반환 타입을 List<Map<String, Object>>로 수정
+    }
+
+//    @PostMapping("/detect-anomalies")
+//    public ResponseEntity<String> detectAnomalies() {
+//        List<Map<String, Object>> anomalies = scmDataService.detectAnomalies(); // 반환 타입 수정
+//
+//        anomalies.forEach(anomaly -> {
+//            if (anomaly.get("product") == null || anomaly.get("eventType") == null) {
+//                log.warn("⚠️ NULL 값 감지 -> 이상 탐지 처리: {}", anomaly);
+//                anomaly.put("status", "위변조");
+//                anomaly.put("reason", "데이터 누락으로 인한 자동 이상 탐지");
+//            }
+//        });
+//
+//        if (!anomalies.isEmpty()) {
+//            messagingTemplate.convertAndSend("/topic/anomalyAlerts", anomalies);
+//            log.info("📡 이상 탐지 결과 STOMP WebSocket으로 전송 완료");
+//        }
+//        return ResponseEntity.ok("Anomaly detection process complete");
+//    }
+}

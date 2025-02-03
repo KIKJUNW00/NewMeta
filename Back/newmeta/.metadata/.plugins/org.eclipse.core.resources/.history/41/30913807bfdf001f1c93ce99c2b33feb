@@ -1,0 +1,52 @@
+package com.newmeta.controller;
+
+import com.newmeta.service.SCMDataService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 📡 SCM 관련 데이터를 제공하는 컨트롤러
+ * ✅ 실시간 물류 데이터 및 이상 탐지 정보를 제공함.
+ */
+@Slf4j
+@RestController
+@RequestMapping("/api/scm")
+@RequiredArgsConstructor
+public class SCMController {
+
+    private final SCMDataService scmDataService; // ✅ SCM 데이터 서비스 의존성 주입
+
+    /**
+     * 🚀 SCM 데이터 조회 API (필터링 기능 추가)
+     * - 특정 이벤트 유형(eventType)
+     * - 허브 이름(hubName)
+     * - 시작 날짜(startDate) & 종료 날짜(endDate) 로 필터링 가능
+     */
+    @GetMapping("/data")
+    public ResponseEntity<List<Map<String, Object>>> getSCMData(
+            @RequestParam(required = false) String eventType,
+            @RequestParam(required = false) String hubName,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        return ResponseEntity.ok(scmDataService.getFilteredSCMData(eventType, hubName, startDate, endDate));
+    }
+
+    /**
+     * 🚀 anomaly_log 이상 탐지 데이터 조회 API (필터링 기능 추가)
+     * - 특정 EPC 코드(epcCode)
+     * - 특정 허브 이름(hubName)
+     * - 특정 제품명(productName)으로 필터링 가능
+     */
+    @GetMapping("/anomalies")
+    public ResponseEntity<List<Map<String, Object>>> getAnomalyData(
+            @RequestParam(required = false) String epcCode,
+            @RequestParam(required = false) String hubName,
+            @RequestParam(required = false) String productName) {
+        return ResponseEntity.ok(scmDataService.getFilteredAnomalyData(epcCode, hubName, productName));
+    }
+}

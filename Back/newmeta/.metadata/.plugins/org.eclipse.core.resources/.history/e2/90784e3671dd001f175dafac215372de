@@ -1,0 +1,130 @@
+package com.newmeta.service;
+
+import com.newmeta.domain.*;
+import com.newmeta.domain.dto.ProductEventLogDTO;
+import com.newmeta.persistence.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ProductEventLogService {
+
+    private final ProductEventLogRepository productEventLogRepo;
+    private final ProductRepository productRepo;
+    private final HubRepository hubRepo;
+    private final EventRepository eventRepo;
+    private final AnomalyLogRepository anomalyLogRepo;
+    private final AnomalyDetectionService anomalyDetectionService;
+    
+    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    /**
+     * ProductEventLog 저장
+     */
+    @Transactional
+    public void saveProductEventLog(Dummy dummy) {
+        try {
+            Product product = productRepo.findById(dummy.getEpcCode())
+                    .orElseGet(() -> productRepo.save(Product.builder()
+                            .epcCode(dummy.getEpcCode())
+                            .productName(dummy.getProductName())
+                            .build()));
+
+            Hub hub = hubRepo.findByHubNameAndLatitudeAndLongitude(
+                    dummy.getHubType(), dummy.getLatitude(), dummy.getLongitude())
+                    .orElseGet(() -> hubRepo.save(Hub.builder()
+                            .hubName(dummy.getHubType())
+                            .latitude(dummy.getLatitude())
+                            .longitude(dummy.getLongitude())
+                            .build()));
+
+            Event event = eventRepo.findByEventType(dummy.getEventType())
+                    .orElseGet(() -> eventRepo.save(Event.builder()
+                            .eventType(dummy.getEventType())
+                            .build()));
+
+            ProductEventLog eventLog = ProductEventLog.builder()
+                    .product(product)
+                    .hub(hub)
+                    .event(event)
+                    .eventTime(parseLocalDateTime(dummy.getEventTime()))
+                    .build();
+
+            productEventLogRepo.save(eventLog);
+
+            anomalyDetectionService.detectAnomalies(dummy, eventLog);
+
+        } catch (Exception e) {
+            log.error("Error saving ProductEventLog: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 날짜 변환 (String → LocalDateTime)
+     */
+    private LocalDateTime parseLocalDateTime(String dateStr) {
+        try {
+            return dateStr != null && !dateStr.isEmpty() ? LocalDateTime.parse(dateStr, dateTimeFormatter) : null;
+        } catch (Exception e) {
+            log.error("Invalid date format: {}", dateStr);
+            return null;
+        }
+    }
+
+    /**
+     * ProductEventLogDTO 변환
+     */
+    private ProductEventLogDTO convertToDTO(ProductEventLog log) {
+        return new ProductEventLogDTO(
+                log.getProductEventLogId(),
+                log.getEventTime(),
+                log.getProduct().getEpcCode(),
+                log.getProduct().getProductName(),
+                log.getHub().getHubName(),
+                log.getEvent().getEventType(),
+                log.getHub().getLatitude(),
+                log.getHub().getLongitude()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProductEventLogDTO> getPagedLogs(Pageable pageable) {
+        return productEventLogRepo.findAll(pageable).map(this::convertToDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductEventLog> findAllLogs() {
+        return productEventLogRepo.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductEventLog> findLogsByEpcCode(String epcCode) {
+        return productEventLogRepo.findByProductEpcCode(epcCode);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<ProductEventLog> findLogById(Long id) {
+        return productEventLogRepo.findById(id);
+    }
+
+    @Transactional
+    public void deleteLog(Long id) {
+        productEventLogRepo.deleteById(id);
+    }
+
+    @Transactional
+    public ProductEventLog saveLog(ProductEventLog productEventLog) {
+        return productEventLogRepo.save(productEventLog);
+    }
+}

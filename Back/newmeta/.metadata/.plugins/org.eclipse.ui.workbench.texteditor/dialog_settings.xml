@@ -2,15 +2,16 @@
 <section name="Workbench">
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="true"/>
-	<list key="replacehistory">
-		<item value="review"/>
-		<item value="board"/>
-		<item value="boardrepo"/>
-	</list>
 	<list key="searchhistory">
-		<item value="content"/>
-		<item value="admin"/>
-		<item value="Admin"/>
-		<item value="adminrepo"/>
+		<item value="anomalyLogRepository"/>
+		<item value="latitude"/>
+		<item value="findByEpcCode"/>
+		<item value="detectAnomalies"/>
+		<item value="io.socket"/>
+		<item value="isDomesticProduct"/>
+	</list>
+	<list key="replacehistory">
+		<item value="anomalyLogRepo"/>
+		<item value="anomalyLogRepository"/>
 	</list>
 </section>

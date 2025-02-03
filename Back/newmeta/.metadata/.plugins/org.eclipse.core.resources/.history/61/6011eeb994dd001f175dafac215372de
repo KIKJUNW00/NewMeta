@@ -1,0 +1,39 @@
+package com.newmeta.service.scheduler;
+
+import com.newmeta.service.CsvReaderService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+@Component
+@RequiredArgsConstructor
+public class CsvScheduler {
+    private final CsvReaderService csvReaderService;
+    
+    private static final String FILE_PATH = "C:\\test/test_product.csv";  // CSV 파일 경로
+    private int currentLine = 0; // 현재 읽고 있는 행 번호
+
+    @Scheduled(fixedRate = 10000) // 10초마다 실행
+    public void processCsvFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
+            String line;
+            int lineNumber = 0;
+            
+            // 현재 읽어야 할 행까지 이동
+            while ((line = reader.readLine()) != null) {
+                if (lineNumber == currentLine) { // 현재 읽을 행에 도달하면 처리
+                    csvReaderService.processCsvLine(line);
+                    currentLine++; // 다음 실행 시 다음 행을 읽도록 설정
+                    break;
+                }
+                lineNumber++;
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading CSV file: " + e.getMessage());
+        }
+    }
+}

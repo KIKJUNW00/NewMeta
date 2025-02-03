@@ -1,0 +1,27 @@
+package com.newmeta.controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.newmeta.domain.dto.AnomalyDTO;
+import com.newmeta.service.AnomalyLogService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/anomaly")
+@RequiredArgsConstructor
+public class AnomalyLogController {
+
+    private final AnomalyLogService anomalyLogService;
+
+    @GetMapping
+    public ResponseEntity<List<AnomalyDTO>> getAllAnomalyDetails() {
+        List<AnomalyDTO> anomaly = anomalyLogService.getAllAnomalyDetails();
+        return ResponseEntity.ok(anomaly);
+    }
+}

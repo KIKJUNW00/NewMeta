@@ -1,0 +1,63 @@
+package com.newmeta.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 📡 WebSocket을 활용한 실시간 알림 서비스
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class WebSocketService {
+
+    private final SimpMessagingTemplate messagingTemplate;
+    private final ObjectMapper objectMapper;
+
+    /**
+     * 🚨 [이상 탐지 알림 전송] - 특정 이상치에 대한 실시간 알림
+     */
+    public void sendAnomalyAlert(Map<String, Object> anomalyData) {
+        try {
+            messagingTemplate.convertAndSend("/topic/anomalyAlerts", anomalyData);
+            log.info("📡 WebSocket - 이상 탐지 알림 전송 완료: {}", anomalyData);
+        } catch (Exception e) {
+            log.error("❌ WebSocket 전송 오류", e);
+        }
+    }
+
+    /**
+     * 🚀 [SCM 실시간 데이터 전송] - 물류 데이터 업데이트
+     */
+    public void sendRealTimeSCMData(Map<String, Object> scmData) {
+        try {
+            messagingTemplate.convertAndSend("/topic/scmDataUpdate", scmData);
+            log.info("📡 WebSocket - SCM 데이터 전송 완료: {}", scmData);
+        } catch (Exception e) {
+            log.error("❌ WebSocket 전송 오류", e);
+        }
+    }
+
+    /**
+     * 🚀 [이상 탐지 데이터 일괄 전송] - 여러 개의 이상 탐지 정보를 실시간으로 전송
+     */
+    public void sendAnomalyUpdates(List<Map<String, Object>> anomalyList) {
+        try {
+            if (anomalyList == null || anomalyList.isEmpty()) {
+                log.warn("⚠️ WebSocket - 이상 탐지 데이터가 비어 있음");
+                return;
+            }
+            messagingTemplate.convertAndSend("/topic/anomalyAlerts", anomalyList);
+            log.info("📡 WebSocket - 이상 탐지 데이터 전송 완료: {}", anomalyList);
+        } catch (Exception e) {
+            log.error("❌ WebSocket 전송 오류", e);
+        }
+    }
+
+}

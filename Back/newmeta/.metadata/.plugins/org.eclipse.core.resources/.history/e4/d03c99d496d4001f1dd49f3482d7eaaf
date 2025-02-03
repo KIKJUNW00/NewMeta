@@ -1,7 +1,0 @@
-package com.newmeta.persistence;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
-public interface HubRepository extends JpaRepository<Hub, String> {
-
-}

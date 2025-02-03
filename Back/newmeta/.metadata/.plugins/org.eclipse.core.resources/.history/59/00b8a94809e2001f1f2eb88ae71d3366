@@ -1,0 +1,129 @@
+package com.newmeta.controller; // 해당 컨트롤러 클래스가 속한 패키지를 선언
+
+import com.newmeta.domain.dto.AnomalyDTO;
+import com.newmeta.service.SCMDataService; // SCM 데이터 서비스 클래스 임포트
+import com.newmeta.service.WebSocketService; // WebSocket 서비스 클래스 임포트
+
+import lombok.RequiredArgsConstructor; // final 필드에 대한 생성자를 Lombok이 자동 생성
+import lombok.extern.slf4j.Slf4j; // 로깅을 위한 Lombok 어노테이션
+
+import org.springframework.http.ResponseEntity; // HTTP 응답을 처리하기 위한 ResponseEntity 임포트
+import org.springframework.web.bind.annotation.*; // Spring Web 관련 어노테이션 임포트
+
+import java.util.HashMap;
+import java.util.List; // 리스트 데이터를 다루기 위한 라이브러리
+import java.util.Map; // 키-값 형태의 데이터를 다루기 위한 Map 클래스
+import java.util.stream.Collectors;
+
+/**
+ * 📡 SCM 관련 데이터를 제공하는 컨트롤러
+ * ✅ 실시간 물류 데이터 및 이상 탐지 정보를 제공
+ */
+@Slf4j // 로깅 기능 자동 추가
+@RestController // RESTful API 컨트롤러로 등록
+@RequestMapping("/scm") // 모든 API 엔드포인트가 `/scm`으로 시작하도록 설정
+@RequiredArgsConstructor // final 필드에 대한 생성자를 Lombok이 자동 생성
+public class SCMController {
+
+    private final SCMDataService scmDataService; // SCM 데이터 관리 서비스
+    private final WebSocketService webSocketService; // 실시간 WebSocket 알림 서비스
+
+    /**
+     * 🚀 [SCM 데이터 조회] - 필터링 추가
+     */
+    @GetMapping("/data")
+    public ResponseEntity<List<Map<String, Object>>> getSCMData(
+            @RequestParam(required = false) String eventType,
+            @RequestParam(required = false) String hubName,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        log.info("📡 SCM 데이터 조회 요청: eventType={}, hubName={}, startDate={}, endDate={}",
+                eventType, hubName, startDate, endDate);
+        return ResponseEntity.ok(scmDataService.getFilteredSCMData(eventType, hubName, startDate, endDate));
+    }
+
+    /**
+     * 🚀 [이상 탐지 데이터 조회] - 필터링 추가
+     */
+    @GetMapping("/anomalies")
+    public ResponseEntity<List<Map<String, Object>>> getAnomalyData(
+            @RequestParam(required = false) String epcCode,
+            @RequestParam(required = false) String hubName,
+            @RequestParam(required = false) String productName,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+
+        // ✅ AnomalyDTO 리스트 가져오기
+        List<AnomalyDTO> anomalyList = scmDataService.getFilteredAnomalyData(epcCode, hubName, productName, startDate, endDate);
+
+        // ✅ AnomalyDTO → Map<String, Object> 변환
+        List<Map<String, Object>> anomalyDataList = anomalyList.stream().map(anomaly -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("anomalyType", anomaly.getAnomalyType());
+            map.put("reason", anomaly.getReason());
+            map.put("epcCode", anomaly.getEpcCode());
+            map.put("anomalyTimestamp", anomaly.getAnomalyTimestamp());
+            map.put("anomalyEventType", anomaly.getAnomalyEventType());
+            map.put("anomalyHub", anomaly.getAnomalyHub());
+            map.put("anomalyProductName", anomaly.getAnomalyProductName());
+            map.put("latitude", anomaly.getLatitude());
+            map.put("longitude", anomaly.getLongitude());
+            return map;
+        }).collect(Collectors.toList());
+
+        // ✅ 변환된 데이터를 ResponseEntity로 반환
+        return ResponseEntity.ok(anomalyDataList);
+    }
+
+    /**
+     * 🚀 [허브별 실시간 물류 데이터 조회]
+     */
+    @GetMapping("/hub-wise-data")
+    public ResponseEntity<Map<String, Object>> getHubWiseSCMData() {
+        log.info("📡 허브별 실시간 물류 데이터 조회 요청");
+        Map<String, Object> hubWiseData = scmDataService.getSCMData();
+        return ResponseEntity.ok(hubWiseData);
+    }
+
+    /**
+     * 🚀 [WebSocket을 통해 허브별 데이터 전송]
+     */
+    @PostMapping("/hub-wise-data/websocket")
+    public ResponseEntity<Void> sendHubWiseDataToWebSocket() {
+        log.info("📡 허브별 데이터 WebSocket 전송 요청");
+
+        // ✅ 허브별 데이터 WebSocket 전송
+        scmDataService.sendHubWiseDataToWebSocket();
+
+        log.info("✅ WebSocket - 허브별 데이터 전송 완료!");
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 🚀 [WebSocket을 통해 실시간 SCM 데이터 전송]
+     */
+    @PostMapping("/data/websocket")
+    public ResponseEntity<Void> sendSCMDataToWebSocket() {
+        log.info("📡 SCM 데이터 WebSocket 전송 요청");
+
+        // ✅ 실시간 SCM 데이터 WebSocket 전송
+        scmDataService.sendSCMDataToWebSocket();
+
+        log.info("✅ WebSocket - SCM 데이터 전송 완료!");
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 🚀 [WebSocket을 통해 실시간 이상 탐지 데이터 전송]
+     */
+    @PostMapping("/anomalies/websocket")
+    public ResponseEntity<Void> sendAnomalyDataToWebSocket() {
+        log.info("📡 이상 탐지 데이터 WebSocket 전송 요청");
+
+        // ✅ 실시간 이상 탐지 데이터 WebSocket 전송
+        scmDataService.sendAnomalyDataToWebSocket();
+
+        log.info("✅ WebSocket - 이상 탐지 데이터 전송 완료!");
+        return ResponseEntity.ok().build();
+    }
+}

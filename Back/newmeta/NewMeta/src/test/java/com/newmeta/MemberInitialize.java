@@ -20,6 +20,11 @@ public class MemberInitialize {
 	@Test
 	public void doWork() {
 		adminRepo.save(Admin.builder()
+				.username("admin") // id 설정
+				.password(encoder.encode("abcd")) // 비밀번호 설정 
+				.role(Role.ROLE_ADMIN) // 권한 설정
+				.build());
+		adminRepo.save(Admin.builder()
 			.username("admin1") // id 설정
 			.password(encoder.encode("abcd")) // 비밀번호 설정 
 			.role(Role.ROLE_ADMIN) // 권한 설정

@@ -1,0 +1,202 @@
+package com.newmeta.service;
+
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.persistence.AnomalyLogRepository;
+import com.newmeta.persistence.ProductEventLogRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * 📡 SCM 데이터 처리 서비스
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class SCMDataService {
+
+    private final ProductEventLogRepository productEventLogRepository;
+    private final AnomalyLogRepository anomalyLogRepository;
+    private final WebSocketService webSocketService; // ✅ WebSocketService 추가
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    /**
+     * 🚀 특정 필터 조건을 적용하여 SCM 데이터를 조회
+     */
+    public List<Map<String, Object>> getFilteredSCMData(String eventType, String hubName, String startDate, String endDate) {
+        return productEventLogRepository.findAll().stream()
+                .filter(log -> (eventType == null || log.getEvent().getEventType().equals(eventType)))
+                .filter(log -> (hubName == null || log.getHub().getHubName().equals(hubName)))
+                .filter(log -> isWithinDateRange(log.getEventTime(), startDate, endDate))
+                .map(log -> {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("epcCode", log.getProduct().getEpcCode());
+                    result.put("productName", log.getProduct().getProductName());
+                    result.put("hub", log.getHub().getHubName());
+                    result.put("eventType", log.getEvent().getEventType());
+                    result.put("eventTime", dateFormat.format(log.getEventTime()));
+                    return result;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 🚀 특정 필터 조건을 적용하여 이상 탐지 데이터를 조회
+     */
+    public List<Map<String, Object>> getFilteredAnomalyData(String epcCode, String hubName, String productName, String startDate, String endDate) {
+        return anomalyLogRepository.findAll().stream()
+                .filter(log -> (epcCode == null || log.getEpcCode().equals(epcCode)))
+                .filter(log -> (hubName == null || log.getAnomalyHub().equals(hubName)))
+                .filter(log -> (productName == null || log.getAnomalyProductName().equals(productName)))
+                .filter(log -> isWithinDateRange(log.getAnomalyTimestamp(), startDate, endDate))
+                .map(log -> {
+                    Map<String, Object> anomaly = new HashMap<>();
+                    anomaly.put("AnomalyId", log.getAnomalyId());
+                    anomaly.put("EPC_code", log.getEpcCode());
+                    anomaly.put("AnomalyProductName", log.getAnomalyProductName());
+                    anomaly.put("AnomalyEventType", log.getAnomalyEventType());
+                    anomaly.put("AnomalyType", log.getAnomalyType());
+                    anomaly.put("AnomalyHub", log.getAnomalyHub());
+                    anomaly.put("latitude", log.getLatitude());
+                    anomaly.put("longitude", log.getLongitude());
+                    anomaly.put("reason", log.getReason());
+                    return anomaly;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 🚀 허브별 실시간 물류 데이터 반환
+     */
+    public Map<String, Object> getSCMData() {
+        List<ProductEventLog> logs = productEventLogRepository.findAll();
+
+        Map<String, Object> hubWiseData = logs.stream()
+                .collect(Collectors.groupingBy(
+                        log -> log.getHub().getHubName(),
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                this::groupByDomesticAndProcess
+                        )
+                ));
+
+        long domesticTotal = logs.stream().filter(log -> isDomesticProduct(log.getProduct().getEpcCode())).count();
+        long importedTotal = logs.stream().filter(log -> !isDomesticProduct(log.getProduct().getEpcCode())).count();
+        long anomalyTotal = anomalyLogRepository.count();
+
+        return Map.of(
+                "hubWiseData", hubWiseData,
+                "domestic_total", domesticTotal,
+                "imported_total", importedTotal,
+                "anomaly_total", anomalyTotal
+        );
+    }
+
+    /**
+     * ✅ EPC 코드로 국내산 여부 판별 (복원됨)
+     */
+    private boolean isDomesticProduct(String epcCode) {
+        if (epcCode == null || epcCode.isEmpty()) return false;
+        String[] parts = epcCode.split("\\.");
+        return parts.length > 2 && parts[1].startsWith("880");
+    }
+
+    /**
+     * ✅ 허브별 공정 데이터 그룹화
+     */
+    private Map<String, Object> groupByDomesticAndProcess(List<ProductEventLog> logs) {
+        Map<String, Long> domesticCounts = countByEventType(logs, true);
+        Map<String, Long> importCounts = countByEventType(logs, false);
+        Map<String, Long> anomalyCounts = countByAnomalies(logs);
+        List<String> productList = logs.stream().map(log -> log.getProduct().getProductName()).distinct().collect(Collectors.toList());
+
+        return Map.of(
+                "domestic", domesticCounts,
+                "imported", importCounts,
+                "anomaly", anomalyCounts,
+                "products", productList
+        );
+    }
+
+    /**
+     * 🚀 [공정 이벤트별 제품 개수 카운트] (복원됨)
+     */
+    private Map<String, Long> countByEventType(List<ProductEventLog> logs, boolean isDomestic) {
+        return logs.stream()
+                .filter(log -> isDomestic == isDomesticProduct(log.getProduct().getEpcCode()))
+                .collect(Collectors.groupingBy(log -> log.getEvent().getEventType(), Collectors.counting()));
+    }
+
+    /**
+     * 🚀 [이상 탐지 개수 카운트] (복원됨)
+     */
+    private Map<String, Long> countByAnomalies(List<ProductEventLog> logs) {
+        return logs.stream()
+                .filter(ProductEventLog::getIsAnomaly)
+                .collect(Collectors.groupingBy(log -> log.getEvent().getEventType(), Collectors.counting()));
+    }
+
+    /**
+     * ✅ WebSocket을 통해 실시간 데이터 전송
+     */
+    public void sendSCMDataToWebSocket() {
+        Map<String, Object> scmData = getSCMData();
+        webSocketService.sendRealTimeSCMData(scmData);
+    }
+
+    public void sendAnomalyDataToWebSocket() {
+        List<Map<String, Object>> anomalyDataList = getFilteredAnomalyData(null, null, null, null, null);
+        webSocketService.sendAnomalyAlert(anomalyDataList); // ✅ 전체 데이터 전송 가능!
+    }
+
+
+    public void sendHubWiseDataToWebSocket() {
+        Map<String, Object> hubWiseData = getSCMData();
+        webSocketService.sendHubWiseData(hubWiseData);
+    }
+    
+//    /**
+//     * 🚀 [실시간 WebSocket 전송 - 일정 주기로 실행]
+//     */
+//    @Scheduled(fixedRate = 1000) // 5초마다 WebSocket으로 데이터 전송
+//    public void sendSCMDataToWebSocketPeriodically() {
+//        log.info("📡 WebSocket을 통해 SCM 데이터를 전송합니다.");
+//        sendSCMDataToWebSocket();
+//    }
+//
+//    @Scheduled(fixedRate = 1000) // 7초마다 이상 탐지 데이터 전송
+//    public void sendAnomalyDataToWebSocketPeriodically() {
+//        log.info("🚨 WebSocket을 통해 이상 탐지 데이터를 전송합니다.");
+//        sendAnomalyDataToWebSocket();
+//    }
+    /**
+     * ✅ [허브별 데이터 전송]을 일정 주기로 실행하도록 스케줄링 추가
+     */
+//    @Scheduled(fixedRate = 1000) // 10초마다 허브별 데이터 WebSocket 전송
+//    public void sendHubWiseDataPeriodically() {
+//        log.info("📡 [SCHEDULER] 허브별 데이터 WebSocket 전송");
+//        sendHubWiseDataToWebSocket();
+//    }
+
+    /**
+     * ✅ 날짜 범위 내 데이터인지 검사 (복원됨)
+     */
+    private boolean isWithinDateRange(Date eventTime, String startDate, String endDate) {
+    	try {
+    	    Date start = (startDate != null && !startDate.isEmpty()) ? dateFormat.parse(startDate) : null;
+    	    Date end = (endDate != null && !endDate.isEmpty()) ? dateFormat.parse(endDate) : null;
+    	    return (start == null || eventTime.after(start)) && (end == null || eventTime.before(end));
+    	} catch (ParseException e) {
+    	    log.warn("❌ 날짜 변환 오류: {}", e.getMessage());
+    	    return false;
+    	}
+    }
+}

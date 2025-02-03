@@ -1,0 +1,27 @@
+package com.newmeta.domain;
+
+import java.util.Date;
+
+import jakarta.persistence.Entity;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Dummy {
+    private String epcCode;       // EPC 코드
+    private String productName;   // 제품 이름
+    private String hubType;       // 허브 유형
+    private String eventType;     // 이벤트 유형
+    private Date eventTime;       // 이벤트 발생 시간
+    private Double latitude;      // 위도
+    private Double longitude;     // 경도
+}

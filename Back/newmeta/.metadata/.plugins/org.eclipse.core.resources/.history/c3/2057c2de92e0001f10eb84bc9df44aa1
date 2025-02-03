@@ -1,0 +1,82 @@
+package com.newmeta.service;
+
+import com.newmeta.persistence.AnomalyLogRepository;
+import com.newmeta.persistence.ProductEventLogRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * 📡 SCM 데이터 처리 서비스
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class SCMDataService {
+
+    private final ProductEventLogRepository productEventLogRepository;
+    private final AnomalyLogRepository anomalyLogRepository;
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    /**
+     * 🚀 특정 필터 조건을 적용하여 SCM 데이터를 조회
+     */
+    public List<Map<String, Object>> getFilteredSCMData(String eventType, String hubName, String startDate, String endDate) {
+        return productEventLogRepository.findAll().stream()
+                .filter(log -> (eventType == null || log.getEvent().getEventType().equals(eventType)))
+                .filter(log -> (hubName == null || log.getHub().getHubName().equals(hubName)))
+                .filter(log -> isWithinDateRange(log.getEventTime(), startDate, endDate))
+                .map(log -> {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("epcCode", log.getProduct().getEpcCode());
+                    result.put("productName", log.getProduct().getProductName());
+                    result.put("hub", log.getHub().getHubName());
+                    result.put("eventType", log.getEvent().getEventType());
+                    result.put("eventTime", dateFormat.format(log.getEventTime()));
+                    return result;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 🚀 anomaly_log에서 특정 필터 조건을 적용하여 이상 탐지 데이터를 조회
+     */
+    public List<Map<String, Object>> getFilteredAnomalyData(String epcCode, String hubName, String productName, String startDate, String endDate) {
+        return anomalyLogRepository.findAll().stream()
+                .filter(log -> (epcCode == null || log.getEpcCode().equals(epcCode)))
+                .filter(log -> (hubName == null || log.getAnomalyHub().equals(hubName)))
+                .filter(log -> (productName == null || log.getAnomalyProductName().equals(productName)))
+                .filter(log -> isWithinDateRange(log.getAnomalyTimestamp(), startDate, endDate))
+                .map(log -> {
+                    Map<String, Object> anomaly = new HashMap<>();
+                    anomaly.put("hub", log.getAnomalyHub());
+                    anomaly.put("product", log.getAnomalyProductName());
+                    anomaly.put("eventType", log.getAnomalyEventType());
+                    anomaly.put("status", log.getAnomalyType());
+                    anomaly.put("reason", log.getReason());
+                    anomaly.put("latitude", log.getLatitude());
+                    anomaly.put("longitude", log.getLongitude());
+                    return anomaly;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * ✅ 날짜 범위 내 데이터인지 검사하는 메서드
+     */
+    private boolean isWithinDateRange(Date eventTime, String startDate, String endDate) {
+        try {
+            Date start = (startDate != null) ? dateFormat.parse(startDate) : null;
+            Date end = (endDate != null) ? dateFormat.parse(endDate) : null;
+            return (start == null || eventTime.after(start)) && (end == null || eventTime.before(end));
+        } catch (ParseException e) {
+            log.warn("❌ 날짜 변환 오류: {}", e.getMessage());
+            return false;
+        }
+    }
+}

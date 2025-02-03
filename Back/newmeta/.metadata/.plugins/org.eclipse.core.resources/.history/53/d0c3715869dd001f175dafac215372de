@@ -1,0 +1,20 @@
+package com.newmeta.domain.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ProductEventLogDTO {
+	private Long seq;
+	private String eventTime;
+
+	private String epcCode;
+	private String productName;
+	private String eventType;
+	private String hubName;
+	private Double latitude;
+	private Double longitude;
+}

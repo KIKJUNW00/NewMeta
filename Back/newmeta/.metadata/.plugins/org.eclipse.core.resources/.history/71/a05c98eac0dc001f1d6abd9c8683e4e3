@@ -1,0 +1,16 @@
+package com.newmeta.domain;
+
+import java.util.Date;
+
+import lombok.Data;
+
+@Data
+public class Dummy {
+    String epcCode;
+    String productName;
+    String hubType;
+    Double latitude;
+    Double longitude;
+    String eventType;
+    Date eventTime;
+}

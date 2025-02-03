@@ -1,0 +1,182 @@
+// 패키지 선언 (해당 클래스가 속한 패키지)
+package com.newmeta.service;
+
+import java.util.Arrays;
+import java.util.List;
+
+// Spring의 서비스 클래스임을 명시
+import org.springframework.stereotype.Service;
+
+// 관련 엔티티 및 레포지토리 가져오기
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.Dummy;
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.persistence.AnomalyLogRepository;
+import com.newmeta.persistence.ProductEventLogRepository;
+
+// Lombok을 사용하여 생성자 자동 생성 및 로깅 기능 추가
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service  // 해당 클래스가 Spring의 서비스 계층을 담당함을 나타냄
+@RequiredArgsConstructor  // Lombok을 사용하여 final 필드를 포함한 생성자를 자동으로 생성
+@Slf4j  // 로깅을 위한 Lombok 어노테이션
+public class AnomalyDetectionService {
+
+    // ✅ 이상 탐지 로그를 저장하는 JPA Repository
+    private final AnomalyLogRepository anomalyLogRepository;
+    
+    // ✅ 제품 이벤트 로그를 저장하는 JPA Repository
+    private final ProductEventLogRepository productEventLogRepository;
+
+    /**
+     * 🚀 이상 탐지 로직 (필수 검출 규칙 적용)
+     * @param dummy - 이상 탐지 분석을 위한 더미 데이터
+     * @param eventLog - 실제 제품 이벤트 로그 데이터
+     */
+    public void detectAnomalies(Dummy dummy, ProductEventLog eventLog) {
+        boolean isAnomaly = false; // 이상 감지 여부
+        String anomalyType = ""; // 이상 유형
+        String reason = ""; // 이상 발생 원인
+
+        // ✅ [변경 사항] NULL 값 감지 (데이터가 없는 경우 탐지 중단)
+        if (dummy == null || eventLog == null || eventLog.getProduct() == null) {
+            log.warn("⚠️ 이상 탐지: NULL 값이 포함된 데이터 감지 (dummy={}, eventLog={})", dummy, eventLog);
+            saveAnomalyLog(eventLog, "데이터 누락", "이상 탐지 시 NULL 값이 감지됨.");
+            return; // NULL 값이 감지된 경우 탐지 종료
+        }
+
+        // EPC 코드와 이벤트 타입 가져오기
+        String epcCode = dummy.getEpcCode();
+        String eventType = dummy.getEventType();
+
+        // ✅ 국내산 여부 확인 (EPC 코드 내 "880" 여부 확인)
+        boolean isDomestic = isDomesticProduct(epcCode);
+        log.info("🔍 EPC [{}] - 국내산 여부: {}", epcCode, isDomestic);
+
+        // ✅ [규칙 1] 국내산 제품은 "commissioning" 이벤트가 반드시 필요
+        if (isDomestic && !hasEventType(epcCode, "commissioning") && !eventType.equals("commissioning")) {
+            isAnomaly = true;
+            anomalyType = "위조";
+            reason = "Commissioning 없이 다른 단계에서 감지됨.";
+        }
+
+        // ✅ [규칙 2] 수입산 제품은 "Custom_inbound" 이벤트가 반드시 필요
+        if (!isDomestic && !hasCustomInbound(epcCode) && !eventType.equals("Custom_inbound")) {
+            isAnomaly = true;
+            anomalyType = "밀수";
+            reason = "수입산 제품이 Custom_inbound 없이 유통됨.";
+        }
+
+        // ✅ [규칙 3] Read Point에서 일련번호가 존재하지 않을 경우 이상 탐지
+        if (!hasSerialNumber(epcCode)) {
+            isAnomaly = true;
+            anomalyType = "불법 유통";
+            reason = "Read Point에서 일련번호 누락됨.";
+        }
+
+        // ✅ [규칙 4] 필수 Read Point 확인
+        if (!hasEssentialReadPoint(epcCode)) {
+            isAnomaly = true;
+            anomalyType = "위조 / 불법 유통";
+            reason = "필수 Read Point 감지 없음.";
+        }
+
+        // ✅ [규칙 5] 이벤트 순서 오류 감지
+        if (isEventSequenceInvalid(epcCode, eventType)) {
+            isAnomaly = true;
+            anomalyType = "위조 / 불법 유통";
+            reason = "이벤트 순서 오류 발생.";
+        }
+
+//        // ✅ 정상 제품이면 anomalyLog를 null로 설정하고 종료
+//        if (!isAnomaly) {
+//            log.info("✅ 정상 처리: EPC [{}] - 이벤트 [{}]", epcCode, eventType);
+//            eventLog.setAnomalyLog(null);
+//            productEventLogRepository.save(eventLog);
+//            return;
+//        }
+
+        // ✅ 이상 탐지된 경우 anomalyLog 저장 및 anomaly_id 연동
+        saveAnomalyLog(eventLog, anomalyType, reason);
+    }
+
+    /**
+     * ✅ anomaly_log 저장 및 product_event_log에 anomaly_id 연동 (항상 새로운 anomaly_id 생성)
+     */
+    private void saveAnomalyLog(ProductEventLog eventLog, String anomalyType, String reason) {
+        if (eventLog == null || eventLog.getProduct() == null) {
+            log.warn("❗ 이벤트 로그 또는 제품 정보가 NULL, anomalyLog 생성 중단");
+            return;
+        }
+
+        String epcCode = eventLog.getProduct().getEpcCode();
+        String eventType = eventLog.getEvent().getEventType();
+
+        // ✅ 항상 새로운 anomaly_log를 생성
+        AnomalyLog anomalyLog = AnomalyLog.builder()
+                .anomalyType(anomalyType)
+                .reason(reason)
+                .epcCode(epcCode)
+                .anomalyTimestamp(eventLog.getEventTime())
+                .anomalyEventType(eventLog.getEvent().getEventType())
+                .anomalyHub(eventLog.getHub().getHubName())
+                .anomalyProductName(eventLog.getProduct().getProductName())
+                .latitude(eventLog.getHub().getLatitude())
+                .longitude(eventLog.getHub().getLongitude())
+                .build();
+
+        anomalyLog = anomalyLogRepository.save(anomalyLog); // ✅ anomaly_log 새로 저장
+
+        // ✅ product_event_log가 새 anomaly_log를 참조하도록 설정
+//        eventLog.setAnomalyLog(anomalyLog);
+        productEventLogRepository.save(eventLog); // ✅ 업데이트 후 저장
+
+        log.info("❗ 이상 탐지 기록됨: EPC [{}] - {}, 위치: ({}, {})", epcCode, reason,
+                eventLog.getHub().getLatitude(), eventLog.getHub().getLongitude());
+    }
+    /**
+     * 🚀 국내산 여부 확인 (EPC 코드 기반, "880" 포함 여부 확인)
+     */
+    private boolean isDomesticProduct(String epcCode) {
+        if (epcCode == null || epcCode.isEmpty()) return false;
+        String[] parts = epcCode.split("\\.");
+        return parts.length > 2 && parts[1].startsWith("880");
+    }
+
+    /**
+     * ✅ 특정 EPC 코드와 이벤트 타입 존재 여부 확인
+     */
+    private boolean hasEventType(String epcCode, String eventType) {
+        return productEventLogRepository.existsByProductEpcCodeAndEventEventType(epcCode, eventType);
+    }
+
+    /**
+     * ✅ Custom_inbound 이벤트 존재 여부 확인
+     */
+    private boolean hasCustomInbound(String epcCode) {
+        return productEventLogRepository.existsByProductEpcCodeAndEventEventType(epcCode, "Custom_inbound");
+    }
+
+    /**
+     * ✅ Read Point에서 일련번호 존재 여부 확인
+     */
+    private boolean hasSerialNumber(String epcCode) {
+        return productEventLogRepository.existsByProductEpcCode(epcCode);
+    }
+
+    /**
+     * ✅ 필수 Read Point 감지 여부 확인 (스트림 API 활용)
+     */
+    private boolean hasEssentialReadPoint(String epcCode) {
+        List<String> essentialEvents = Arrays.asList("commissioning", "Custom_inbound");
+        return essentialEvents.stream().anyMatch(event -> productEventLogRepository.existsByProductEpcCodeAndEventEventType(epcCode, event));
+    }
+
+    /**
+     * ✅ 이벤트 순서 오류 확인
+     */
+    private boolean isEventSequenceInvalid(String epcCode, String eventType) {
+        return productEventLogRepository.existsByProductEpcCodeAndEventEventType(epcCode, "event_order_error");
+    }
+}

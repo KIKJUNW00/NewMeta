@@ -1,0 +1,34 @@
+package com.newmeta.persistence;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import com.newmeta.domain.Event;
+import com.newmeta.domain.ProductEventLog;
+
+@Repository
+public interface ProductEventLogRepository extends JpaRepository<ProductEventLog, Long> {
+	 Optional<Event> findByEventType(String eventType); // 올바른 쿼리 메서드
+	
+	 List<ProductEventLog> findByProductEpcCodeAndEventEventType(String epcCode, String eventType);
+	
+
+	 //특정 Product와 관련된 이벤트 로그 조회
+    List<ProductEventLog> findByProductEpcCode(String epcCode);
+
+    // 특정 Hub에서 발생한 이벤트 로그 조회
+    List<ProductEventLog> findByHubHubId(Long hubId);
+
+    // 특정 Event 타입과 관련된 로그 조회
+    List<ProductEventLog> findByEventEventId(Long eventId);
+    
+    @Query("SELECT p FROM ProductEventLog p")
+    Stream<ProductEventLog> streamAll();
+
+
+}

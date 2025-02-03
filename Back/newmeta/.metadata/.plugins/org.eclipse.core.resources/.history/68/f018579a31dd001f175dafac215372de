@@ -1,0 +1,27 @@
+package com.newmeta.service;
+
+import org.springframework.stereotype.Service;
+
+import com.newmeta.domain.Hub;
+import com.newmeta.persistence.HubRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class HubService {
+
+    private final HubRepository hubRepo;
+
+    public Hub saveIfNotExists(String hubName, Double latitude, Double longitude) {
+        return hubRepo.findByHubName(hubName)
+                .orElseGet(() -> {
+                    Hub hub = Hub.builder()
+                            .hubName(hubName)
+                            .latitude(latitude)
+                            .longitude(longitude)
+                            .build();
+                    return hubRepo.save(hub); // 기본 키는 자동 생성됨
+                });
+    }
+}

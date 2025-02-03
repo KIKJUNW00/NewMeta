@@ -1,0 +1,192 @@
+package com.newmeta.service;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.Dummy;
+import com.newmeta.domain.Event;
+import com.newmeta.domain.Hub;
+import com.newmeta.domain.Product;
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.domain.dto.ProductEventLogDTO;
+import com.newmeta.persistence.AnomalyLogRepository;
+import com.newmeta.persistence.EventRepository;
+import com.newmeta.persistence.HubRepository;
+import com.newmeta.persistence.ProductEventLogRepository;
+import com.newmeta.persistence.ProductRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ProductEventLogService {
+
+    private final ProductEventLogRepository productEventLogRepo;
+    private final ProductRepository productRepo;
+    private final HubRepository hubRepo;
+    private final EventRepository eventRepo;
+    private final AnomalyLogRepository anomalyLogRepo;
+
+    /**
+     * ProductEventLog 저장 (Hub 및 Event 중복 방지)
+     */
+    @Transactional
+    public void saveProductEventLog(Dummy dummy) {
+        try {
+            // 1. Product 조회 또는 저장
+            Product product = productRepo.findById(dummy.getEpcCode())
+                    .orElseGet(() -> productRepo.save(Product.builder()
+                            .epcCode(dummy.getEpcCode())
+                            .productName(dummy.getProductName())
+                            .build()));
+
+            // 2. Hub 조회 또는 저장 (중복 저장 방지)
+            Hub hub = hubRepo.findByHubNameAndLatitudeAndLongitude(
+                    dummy.getHubType(), dummy.getLatitude(), dummy.getLongitude())
+                    .orElseGet(() -> hubRepo.save(Hub.builder()
+                            .hubName(dummy.getHubType())
+                            .latitude(dummy.getLatitude())
+                            .longitude(dummy.getLongitude())
+                            .build()));
+
+            // 3. Event 조회 또는 저장 (중복 저장 방지)
+            Event event = eventRepo.findByEventType(dummy.getEventType())
+                    .orElseGet(() -> eventRepo.save(Event.builder()
+                            .eventType(dummy.getEventType())
+                            .build()));
+
+            // 4. ProductEventLog 생성 및 저장
+            ProductEventLog eventLog = ProductEventLog.builder()
+                    .product(product)
+                    .hub(hub)
+                    .event(event)
+                    .eventTime(dummy.getEventTime())
+                    .build();
+
+            productEventLogRepo.save(eventLog);
+        } catch (Exception e) {
+            log.error("Error saving ProductEventLog: {}", e.getMessage());
+            handleAnomaly(dummy, e.getMessage());
+        }
+    }
+
+    /**
+     * 이상 데이터 저장 (이상 로그 + 이벤트 로그 함께 저장)
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void handleAnomaly(Dummy dummy, String reason) {
+        try {
+            // Product, Hub, Event 생성 또는 조회
+            Product product = productRepo.findById(dummy.getEpcCode())
+                    .orElseGet(() -> productRepo.save(Product.builder()
+                            .epcCode(dummy.getEpcCode())
+                            .productName(dummy.getProductName())
+                            .build()));
+
+            Hub hub = hubRepo.findByHubNameAndLatitudeAndLongitude(
+                    dummy.getHubType(), dummy.getLatitude(), dummy.getLongitude())
+                    .orElseGet(() -> hubRepo.save(Hub.builder()
+                            .hubName(dummy.getHubType())
+                            .latitude(dummy.getLatitude())
+                            .longitude(dummy.getLongitude())
+                            .build()));
+
+            Event event = eventRepo.findByEventType(dummy.getEventType())
+                    .orElseGet(() -> eventRepo.save(Event.builder()
+                            .eventType(dummy.getEventType())
+                            .build()));
+
+            // 이상 데이터 로그 저장
+            ProductEventLog anomalyEventLog = ProductEventLog.builder()
+                    .product(product)
+                    .hub(hub)
+                    .event(event)
+                    .eventTime(dummy.getEventTime())
+                    .build();
+            productEventLogRepo.save(anomalyEventLog);
+
+            // AnomalyLog 생성 및 저장
+            AnomalyLog anomalyLog = AnomalyLog.builder()
+                    .anomalyType("Data Processing Error")
+                    .reason(reason)
+                    .productEventLog(anomalyEventLog)
+                    .build();
+            anomalyLogRepo.save(anomalyLog);
+        } catch (Exception e) {
+            log.error("Error saving anomaly for dummy: {}", dummy, e);
+        }
+    }
+
+    /**
+     * ProductEventLog 저장
+     */
+    @Transactional
+    public ProductEventLog saveLog(ProductEventLog productEventLog) {
+        return productEventLogRepo.save(productEventLog);
+    }
+
+    /**
+     * ProductEventLog 삭제
+     */
+    @Transactional
+    public void deleteLog(Long id) {
+        productEventLogRepo.deleteById(id);
+    }
+
+    /**
+     * 특정 ID로 이벤트 로그 조회
+     */
+    @Transactional(readOnly = true)
+    public Optional<ProductEventLog> findLogById(Long id) {
+        return productEventLogRepo.findById(id);
+    }
+
+    /**
+     * 모든 이벤트 로그 조회
+     */
+    @Transactional(readOnly = true)
+    public List<ProductEventLog> findAllLogs() {
+        return productEventLogRepo.findAll();
+    }
+
+    /**
+     * 특정 EPC 코드로 이벤트 로그 조회
+     */
+    @Transactional(readOnly = true)
+    public List<ProductEventLog> findLogsByEpcCode(String epcCode) {
+        return productEventLogRepo.findByProductEpcCode(epcCode);
+    }
+
+    /**
+     * 페이징 처리된 이벤트 로그 조회
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductEventLogDTO> getPagedLogs(Pageable pageable) {
+        return productEventLogRepo.findAll(pageable).map(this::convertToDTO);
+    }
+
+    /**
+     * 엔티티를 DTO로 변환
+     */
+    private ProductEventLogDTO convertToDTO(ProductEventLog log) {
+        return new ProductEventLogDTO(
+                log.getProductEventLogId(),
+                log.getEventTime(),
+                log.getProduct().getEpcCode(),
+                log.getProduct().getProductName(),
+                log.getHub().getHubName(),
+                log.getEvent().getEventType(),
+                log.getHub().getLatitude(),
+                log.getHub().getLongitude()
+        );
+    }
+}

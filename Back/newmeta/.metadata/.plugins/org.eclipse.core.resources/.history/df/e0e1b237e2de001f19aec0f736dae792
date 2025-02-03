@@ -1,0 +1,23 @@
+package com.newmeta.websocket;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class SCMWebSocketScheduler {
+
+    private final SCMWebSocketHandler scmWebSocketHandler;
+
+    /**
+     * ⏰ 5초마다 WebSocket으로 실시간 데이터 전송
+     */
+    @Scheduled(fixedRate = 5000)
+    public void sendRealTimeSCMData() {
+        log.info("📡 실시간 SCM 데이터 전송 중...");
+        scmWebSocketHandler.sendRealTimeData();
+    }
+}

@@ -1,0 +1,18 @@
+package com.newmeta.event;
+
+import lombok.Getter;
+import org.springframework.context.ApplicationEvent;
+
+import java.util.Map;
+
+@Getter
+public class SCMDataUpdateEvent extends ApplicationEvent {
+	private static final long serialVersionUID = 1L; // ✅ 직렬화 버전 추가
+
+    private final Object scmData;   
+
+    public SCMDataUpdateEvent(Object source, Map<String, Object> scmData) {
+        super(source);
+        this.scmData = scmData;
+    }
+}

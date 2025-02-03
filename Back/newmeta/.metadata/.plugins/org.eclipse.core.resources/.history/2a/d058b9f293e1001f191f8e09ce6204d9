@@ -1,0 +1,55 @@
+package com.newmeta.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+
+///**
+// * 📌 WebSocket 설정 파일
+// * ✅ STOMP 프로토콜을 활용한 실시간 메시지 브로커 구성
+// */
+//@Configuration
+//@EnableWebSocketMessageBroker
+//public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+//
+//    /**
+//     * 🚀 STOMP 기반 WebSocket 엔드포인트 설정
+//     * @param registry STOMP 엔드포인트 등록을 위한 객체
+//     */
+//    @Override
+//    public void registerStompEndpoints(StompEndpointRegistry registry) {
+//        registry.addEndpoint("/ws") // ✅ WebSocket 연결을 위한 엔드포인트 설정 (React 등 클라이언트에서 접속 가능)
+//                .setAllowedOriginPatterns("*") // ✅ 모든 프론트엔드 도메인 허용 (setAllowedOrigins("*") 대신 사용)
+//                .withSockJS(); // ✅ SockJS 지원 (선택 사항: 필요 없다면 제거 가능)
+//    }
+//
+//    /**
+//     * 🚀 메시지 브로커 설정
+//     * @param registry 메시지 브로커를 등록하는 객체
+//     */
+//    @Override
+//    public void configureMessageBroker(MessageBrokerRegistry registry) {
+//        registry.enableSimpleBroker("/topic", "/queue"); // ✅ 브로커 경로 추가 (/topic: 전체, /queue: 개별 메시지)
+//        registry.setApplicationDestinationPrefixes("/app"); // ✅ 클라이언트가 서버로 메시지를 보낼 때 사용
+//    }
+//}
+//
+@Configuration
+@EnableWebSocketMessageBroker
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws-stomp")
+                .setAllowedOrigins("http://localhost:3000") // ✅ React 연결 허용
+                .withSockJS(); // ✅ WebSocket 미지원 환경 대응
+    }
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/topic"); // ✅ 클라이언트가 구독할 메시지 브로커
+        registry.setApplicationDestinationPrefixes("/app"); // ✅ 클라이언트가 서버로 보낼 경로
+    }
+}

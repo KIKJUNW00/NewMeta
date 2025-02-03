@@ -1,9 +1,0 @@
-package com.newmeta.persistence;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.newmeta.domain.Review;
-
-public class ReviewRepository implements JpaRepository<Review, Long> {
-
-}

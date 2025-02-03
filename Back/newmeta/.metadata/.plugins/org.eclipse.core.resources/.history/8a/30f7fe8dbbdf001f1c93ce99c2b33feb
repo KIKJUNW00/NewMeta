@@ -1,0 +1,36 @@
+package com.newmeta.controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.dto.AnomalyDTO;
+import com.newmeta.service.AnomalyLogService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/anomalies")
+@RequiredArgsConstructor
+public class AnomalyLogController {
+    private final AnomalyLogService anomalyLogService;
+
+    @GetMapping
+    public ResponseEntity<List<AnomalyDTO>> getAllAnomalyDetails() {
+        return ResponseEntity.ok(anomalyLogService.getAllAnomalyDetails());
+    }
+
+    @GetMapping("/{epcCode}")
+    public ResponseEntity<List<AnomalyLog>> getAnomaliesByEpc(@PathVariable String epcCode) {
+        return ResponseEntity.ok(anomalyLogService.getAnomaliesByEpc(epcCode));
+    }
+
+    @GetMapping("/by-product/{productName}")
+    public ResponseEntity<List<AnomalyLog>> getAnomaliesByProduct(@PathVariable String productName) {
+        return ResponseEntity.ok(anomalyLogService.getAnomaliesByProduct(productName));
+    }
+
+
+}

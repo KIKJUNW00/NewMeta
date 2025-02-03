@@ -1,0 +1,17 @@
+package com.newmeta.service.scheduler;
+
+import com.newmeta.service.CsvReaderService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class CsvScheduler {
+    private final CsvReaderService csvReaderService;
+
+    @Scheduled(fixedRate = 1000) // 10초마다 실행
+    public void processCsvFile() {
+        csvReaderService.processCsvLine(); // 한 줄씩 처리하도록 변경
+    }
+}

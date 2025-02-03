@@ -1,0 +1,236 @@
+// ✅ 해당 클래스가 `com.newmeta.service` 패키지에 포함됨
+package com.newmeta.service;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+// ✅ 관련 엔티티 및 DTO 가져오기
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.Dummy;
+import com.newmeta.domain.Event;
+import com.newmeta.domain.Hub;
+import com.newmeta.domain.Product;
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.domain.dto.ProductEventLogDTO;
+
+// ✅ 관련 리포지토리 가져오기
+import com.newmeta.persistence.AnomalyLogRepository;
+import com.newmeta.persistence.EventRepository;
+import com.newmeta.persistence.HubRepository;
+import com.newmeta.persistence.ProductEventLogRepository;
+import com.newmeta.persistence.ProductRepository;
+
+// ✅ Lombok을 활용한 자동 코드 생성
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+// ✅ Spring의 서비스 레이어로 정의
+@Service
+@RequiredArgsConstructor // final 필드에 대한 생성자 자동 생성
+@Slf4j // 로깅 기능 추가
+public class ProductEventLogService {
+
+    // ✅ 의존성 주입 (자동 생성자를 통한 주입)
+    private final ProductEventLogRepository productEventLogRepo;
+    private final ProductRepository productRepo;
+    private final HubRepository hubRepo;
+    private final EventRepository eventRepo;
+    private final AnomalyLogRepository anomalyLogRepo;
+    private final AnomalyDetectionService anomalyDetectionService;
+
+    // ✅ 날짜 변환을 위한 포맷 설정 (yyyy-MM-dd HH:mm:ss)
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    /**
+     * 🚀 ProductEventLog 저장 (Hub 및 Event 중복 방지)
+     */
+    @Transactional
+    public void saveProductEventLog(Dummy dummy) {
+        try {
+            // ✅ 1. Product 조회 또는 저장
+            Product product = productRepo.findById(dummy.getEpcCode())
+                    .orElseGet(() -> productRepo.save(Product.builder()
+                            .epcCode(dummy.getEpcCode())
+                            .productName(dummy.getProductName())
+                            .build()));
+
+            // ✅ 2. Hub 조회 또는 저장 (중복 방지)
+            Hub hub = hubRepo.findByHubNameAndLatitudeAndLongitude(
+                    dummy.getHubType(), dummy.getLatitude(), dummy.getLongitude())
+                    .orElseGet(() -> hubRepo.save(Hub.builder()
+                            .hubName(dummy.getHubType())
+                            .latitude(dummy.getLatitude())
+                            .longitude(dummy.getLongitude())
+                            .build()));
+
+            // ✅ 3. Event 조회 또는 저장 (중복 방지)
+            Event event = eventRepo.findByEventType(dummy.getEventType())
+                    .orElseGet(() -> eventRepo.save(Event.builder()
+                            .eventType(dummy.getEventType())
+                            .build()));
+
+            // ✅ eventTime을 Date 타입으로 변환
+            Date parsedEventTime = convertToDate(dummy.getEventTime());
+
+            // ✅ ProductEventLog 생성 및 저장
+            ProductEventLog eventLog = ProductEventLog.builder()
+                    .product(product)
+                    .hub(hub)
+                    .event(event)
+                    .eventTime(parsedEventTime)
+                    .build();
+
+            productEventLogRepo.save(eventLog);
+
+            // ✅ 5. 이상 탐지 서비스 호출 (이상 발생 시 ProductEventLog와 함께 저장됨)
+            anomalyDetectionService.detectAnomalies(dummy, eventLog);
+
+        } catch (Exception e) {
+            log.error("❗ Error saving ProductEventLog: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 🚀 이상 데이터 저장 (이상 로그 + 이벤트 로그 함께 저장)
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void handleAnomaly(Dummy dummy, String reason) {
+        try {
+            // ✅ Product, Hub, Event 생성 또는 조회
+            Product product = productRepo.findById(dummy.getEpcCode())
+                    .orElseGet(() -> productRepo.save(Product.builder()
+                            .epcCode(dummy.getEpcCode())
+                            .productName(dummy.getProductName())
+                            .build()));
+
+            Hub hub = hubRepo.findByHubNameAndLatitudeAndLongitude(
+                    dummy.getHubType(), dummy.getLatitude(), dummy.getLongitude())
+                    .orElseGet(() -> hubRepo.save(Hub.builder()
+                            .hubName(dummy.getHubType())
+                            .latitude(dummy.getLatitude())
+                            .longitude(dummy.getLongitude())
+                            .build()));
+
+            Event event = eventRepo.findByEventType(dummy.getEventType())
+                    .orElseGet(() -> eventRepo.save(Event.builder()
+                            .eventType(dummy.getEventType())
+                            .build()));
+
+            // ✅ 이상 데이터 로그 저장
+            ProductEventLog anomalyEventLog = ProductEventLog.builder()
+                    .product(product)
+                    .hub(hub)
+                    .event(event)
+                    .eventTime(convertToDate(dummy.getEventTime()))
+                    .build();
+            productEventLogRepo.save(anomalyEventLog);
+
+            // ✅ AnomalyLog 생성 및 저장
+            AnomalyLog anomalyLog = AnomalyLog.builder()
+                    .anomalyType("Data Processing Error")
+                    .reason(reason)
+                    .productEventLog(anomalyEventLog)
+                    .build();
+            anomalyLogRepo.save(anomalyLog);
+        } catch (Exception e) {
+            log.error("❗ Error saving anomaly for dummy: {}", dummy, e);
+        }
+    }
+
+    /**
+     * ✅ 특정 EPC 코드로 이벤트 로그 조회
+     */
+    @Transactional(readOnly = true)
+    public Optional<ProductEventLog> findLogById(Long id) {
+        return productEventLogRepo.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductEventLog> findAllLogs() {
+        return productEventLogRepo.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductEventLog> findLogsByEpcCode(String epcCode) {
+        return productEventLogRepo.findByProductEpcCode(epcCode);
+    }
+
+    @Transactional
+    public void deleteLog(Long id) {
+        productEventLogRepo.deleteById(id);
+    }
+
+    @Transactional
+    public ProductEventLog saveLog(ProductEventLog eventLog) {
+        return productEventLogRepo.save(eventLog);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProductEventLogDTO> getPagedLogs(Pageable pageable) {
+        return productEventLogRepo.findAll(pageable).map(this::convertToDTO);
+    }
+
+    /**
+     * ✅ 엔티티를 DTO로 변환
+     */
+    private ProductEventLogDTO convertToDTO(ProductEventLog log) {
+        return new ProductEventLogDTO(
+                log.getProductEventLogId(),
+                log.getEventTime(),
+                log.getProduct().getEpcCode(),
+                log.getProduct().getProductName(),
+                log.getHub().getHubName(),
+                log.getEvent().getEventType(),
+                log.getHub().getLatitude(),
+                log.getHub().getLongitude()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductEventLog> findLogsByTimeRange(Date startDate, Date endDate) {
+        return productEventLogRepo.findByEventTimeBetween(startDate, endDate);
+    }
+
+    /**
+     * ✅ 날짜 문자열을 Date 타입으로 변환
+     */
+    private Date parseDate(String dateStr) {
+        try {
+            if (dateStr == null || dateStr.isEmpty()) {
+                return null;
+            }
+
+            if (dateStr.length() == 16) {
+                dateStr = dateStr + ":00";
+            }
+
+            return dateFormat.parse(dateStr);
+        } catch (ParseException e) {
+            log.error("❗ Invalid date format: {}", dateStr);
+            return null;
+        }
+    }
+
+    /**
+     * ✅ LocalDateTime을 Date로 변환
+     */
+    private Date convertToDate(LocalDateTime localDateTime) {
+        return localDateTime == null ? null : Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+    }
+    
+ // ✅ 추가: Date 타입을 그대로 반환 (오류 방지)
+    private Date convertToDate(Date date) {
+        return date; // 이미 Date 타입이므로 변환 없이 반환
+    }
+}

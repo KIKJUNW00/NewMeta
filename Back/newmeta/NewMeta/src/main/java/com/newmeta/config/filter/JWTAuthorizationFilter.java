@@ -3,9 +3,13 @@ package com.newmeta.config.filter;
 import java.io.IOException;
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.Authentication;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -17,47 +21,71 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 public class JWTAuthorizationFilter extends OncePerRequestFilter {
-	
-	// 인가 설정을 위해 사용자의 Role 정보를 읽어 들이기 위한 객체 설정
-	private final AdminRepository memRepo;
-	
-	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-			throws ServletException, IOException {
-		String srcToken = request.getHeader("Authorization");
-		if(srcToken == null || !srcToken.startsWith("Bearer ")) {
-			filterChain.doFilter(request, response);
-			return;
-		}
-		String jwtToken = srcToken.replace("Bearer ", "");
-		
-		// 토큰에서 usernanme 추출
-		String username = JWT.require(Algorithm.HMAC256("com.newmeta.jwt")).build().verify(jwtToken).getClaim("username").asString();
-		
-		Optional<Admin> opt = memRepo.findById(username); // 토큰에서 얻은 username으로 DB를 검색
-		if(!opt.isPresent()) { // 사용자가 존재하지 않는다면
-			filterChain.doFilter(request, response); // 필터를 그냥 통과
-			return;
-		}
-		Admin findmember = opt.get();
-		
-		// DB에서 읽은 사용자 정보를 이용해서 UserDetails 타입의 객체를 생성
-		User user = new User(findmember.getUsername(),findmember.getPassword(), AuthorityUtils.createAuthorityList(findmember.getRole().toString()));
-		
-		 // Authentication 객체를 생성 : 사용자명과 권한 관리를 위한 정보를 입력(암호는 필요 없음)
-//		Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-		
-		 // 시큐리티 세션에 등록한다.
-//		SecurityContextHolder.getContext().setAuthentication(auth); 
-		
-		
-		filterChain.doFilter(request, response);
 
-	}
+    private final AdminRepository adminRepo;
 
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+        log.info("🔍 [요청 URI] {}", requestURI);
+
+        if (requestURI.startsWith("/ws-stomp")) {
+            log.info("🔄 WebSocket 요청 감지 - JWT 검증 제외");
+            filterChain.doFilter(request, response);
+            return;
+        }
+        if (requestURI.startsWith("/scm")) {
+            log.info("🔄 WebSocket 요청 감지 - JWT 검증 제외");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String srcToken = request.getHeader("Authorization");
+        if (srcToken == null || !srcToken.startsWith("Bearer ")) {
+            log.warn("⛔ [JWT 필터] Authorization 헤더 없음 또는 형식 오류");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String jwtToken = srcToken.replace("Bearer ", "");
+        log.info("🔑 [JWT 검증] 토큰 수신: {}", jwtToken);
+
+        try {
+            String username = JWT.require(Algorithm.HMAC256("com.newmeta.jwt"))
+                    .build()
+                    .verify(jwtToken)
+                    .getClaim("username")
+                    .asString();
+
+            log.info("✅ [JWT 검증 성공] username: {}", username);
+
+            Optional<Admin> opt = adminRepo.findById(username);
+            if (!opt.isPresent()) {
+                log.warn("❌ [JWT 인증 실패] 존재하지 않는 사용자: {}", username);
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            Admin findAdmin = opt.get();
+            log.info("👤 [인증된 사용자] ID: {}, Role: {}", findAdmin.getUsername(), findAdmin.getRole());
+
+            User user = new User(findAdmin.getUsername(), findAdmin.getPassword(),
+                    AuthorityUtils.createAuthorityList(findAdmin.getRole().toString()));
+
+            Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            log.error("🚨 [JWT 검증 오류] {}", e.getMessage());
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        }
+    }
 }
-// OncePerRequestFilter 를 상속받게 되면 하나의 요청에 대해서 단 한번만 필터를 거치게 된다.
-// 예를 들어 forwarding 되어 다른 페이지로 이동하게 되더라도 다시이 필터를거치지않게한다.

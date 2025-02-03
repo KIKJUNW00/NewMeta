@@ -1,0 +1,128 @@
+package com.newmeta.service;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.Dummy;
+import com.newmeta.domain.Event;
+import com.newmeta.domain.Hub;
+import com.newmeta.domain.Product;
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.persistence.AnomalyLogRepository;
+import com.newmeta.persistence.ProductEventLogRepository;
+
+import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class CsvReaderService {
+    private final AnomalyLogRepository anomalyLogRepository;
+    private final ProductEventLogRepository productEventLogRepo;
+
+    public List<Dummy> readCsv(String filePath) throws IOException {
+        List<Dummy> list = new ArrayList<>();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+
+        try (BufferedReader in = new BufferedReader(new FileReader(filePath))) {
+            in.readLine(); // Skip header
+            String line;
+            while ((line = in.readLine()) != null) {
+                String[] arr = line.split(",");
+                if (arr.length < 7) {
+                    System.out.println("Invalid data row: insufficient columns - " + line);
+                    saveAnomaly(createDummy(arr), "Insufficient columns");
+                    continue;
+                }
+
+                try {
+                    String epcCode = arr[0];
+                    String productName = arr[1];
+                    String hubType = arr[2];
+                    String eventType = arr[3];
+                    String eventTime = arr[4];
+                    double latitude = parseDoubleWithValidation(arr[5], -90, 90, "latitude", line);
+                    double longitude = parseDoubleWithValidation(arr[6], -180, 180, "longitude", line);
+
+                    try {
+                        dateFormat.parse(eventTime); // Validate event time
+                    } catch (ParseException e) {
+                        System.out.println("Invalid date format in row: " + line);
+                        saveAnomaly(createDummy(arr), "Invalid event_time format");
+                        continue;
+                    }
+
+                    Dummy dummy = new Dummy(epcCode, productName, hubType, eventType, eventTime, latitude, longitude);
+                    list.add(dummy);
+                } catch (Exception e) {
+                    System.out.println("Unexpected error processing row: " + line + " Error: " + e.getMessage());
+                    saveAnomaly(createDummy(arr), "Unexpected error");
+                }
+            }
+        }
+        return list;
+    }
+
+    private double parseDoubleWithValidation(String value, double min, double max, String fieldName, String line) {
+        try {
+            double parsedValue = Double.parseDouble(value);
+            if (parsedValue < min || parsedValue > max) {
+                System.out.println("Invalid " + fieldName + " in row: " + line);
+                return 0.0; // Default value
+            }
+            return parsedValue;
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid number format for " + fieldName + " in row: " + line);
+            return 0.0; // Default value
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void saveAnomaly(Dummy dummy, String reason) {
+        try {
+            // 먼저 ProductEventLog 객체 생성 및 저장
+            ProductEventLog eventLog = ProductEventLog.builder()
+                    .product(new Product(dummy.getEpcCode(), dummy.getProductName()))
+                    .hub(new Hub(null, dummy.getHubType(), dummy.getLatitude(), dummy.getLongitude()))
+                    .event(new Event(null, dummy.getEventType()))
+                    .eventTime(dummy.getEventTime())
+                    .build();
+
+            productEventLogRepo.saveAndFlush(eventLog); // ProductEventLog를 먼저 저장
+
+            // 저장된 ProductEventLog를 기반으로 AnomalyLog 생성
+            AnomalyLog anomalyLog = AnomalyLog.builder()
+                    .anomalyType("Data Validation Error")
+                    .reason(reason)
+                    .productEventLog(eventLog) // 저장된 ProductEventLog와 연관 설정
+                    .build();
+
+            anomalyLogRepo.saveAndFlush(anomalyLog); // AnomalyLog 저장
+            System.out.println("Anomaly saved: " + anomalyLog);
+        } catch (Exception e) {
+            System.out.println("Error saving anomaly: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private Dummy createDummy(String[] arr) {
+        return new Dummy(
+                arr.length > 0 ? arr[0] : null,
+                arr.length > 1 ? arr[1] : null,
+                arr.length > 2 ? arr[2] : null,
+                arr.length > 3 ? arr[3] : null,
+                arr.length > 4 ? arr[4] : null,
+                arr.length > 5 ? parseDoubleWithValidation(arr[5], -90, 90, "latitude", String.join(",", arr)) : 0.0,
+                arr.length > 6 ? parseDoubleWithValidation(arr[6], -180, 180, "longitude", String.join(",", arr)) : 0.0
+        );
+    }
+}

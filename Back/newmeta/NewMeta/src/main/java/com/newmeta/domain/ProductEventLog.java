@@ -1,62 +1,46 @@
 package com.newmeta.domain;
 
-import java.util.Date;
-
+import java.util.Date; // 기존: Date 사용
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
+@Entity
 @Getter
 @Setter
-@ToString
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
-@Entity
+@AllArgsConstructor
+@Builder
 public class ProductEventLog {
-	
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long seq; // 기본키
-	
+	private Long productEventLogId; // 기본키
+
 	@Column(name = "event_time", columnDefinition = "DATETIME")
-	@Temporal(TemporalType.TIMESTAMP)
+	@Temporal(TemporalType.TIMESTAMP) // 기존: Date 사용
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
-	private Date eventTime;
-	
-	private boolean cfStatus; // 위변조 여부
-	private boolean idStatus; // 불법유통 여부
+	private Date eventTime; // 이벤트 발생 시간
 
+	@Column(name = "is_anomaly")
+	private Boolean isAnomaly; // 이상치 여부
 	
-	@ManyToOne
-    @JoinColumn(name = "admin_id")
-    private Admin admin;
-
-	
-	@ManyToOne
+	@ManyToOne(cascade = CascadeType.PERSIST)
 	@JoinColumn(name = "epc_code")
-	private Product product; 
-//
-	@ManyToOne
-	@JoinColumn(name = "event_id")
-	private Event event; 
-//
-	@ManyToOne
-	@JoinColumn(name = "hub_id")
-	private Hub hub; 
+	@JsonIgnore
+	private Product product;
 
+	@ManyToOne(cascade = CascadeType.PERSIST)
+	@JoinColumn(name = "event_id")
+	@JsonIgnore
+	private Event event;
+
+	@ManyToOne(cascade = CascadeType.PERSIST)
+	@JoinColumn(name = "hub_id")
+	@JsonIgnore
+	private Hub hub;
+	
+
+	
 }

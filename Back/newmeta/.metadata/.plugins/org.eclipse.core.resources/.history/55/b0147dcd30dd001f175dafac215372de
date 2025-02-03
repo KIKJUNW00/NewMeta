@@ -1,0 +1,80 @@
+package com.newmeta.service;
+
+import com.newmeta.domain.*;
+import com.newmeta.persistence.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class CsvReaderService {
+    private final ProductRepository productRepository;
+    private final HubRepository hubRepository;
+    private final EventRepository eventRepository;
+    private final ProductEventLogRepository productEventLogRepository;
+    private final AnomalyDetectionService anomalyDetectionService;
+
+    @Transactional
+    public void processCsv(String filePath) throws IOException {
+        List<Dummy> validDataList = new ArrayList<>();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            reader.readLine(); // Skip header
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+                if (data.length < 7) {
+                    System.out.println("Invalid row: " + line);
+                    continue;
+                }
+
+                try {
+                    String epcCode = data[0];
+                    String productName = data[1];
+                    String hubType = data[2];
+                    String eventType = data[3];
+                    String eventTime = data[4];
+                    double latitude = Double.parseDouble(data[5]);
+                    double longitude = Double.parseDouble(data[6]);
+
+                    // Validate event time format
+                    dateFormat.parse(eventTime);
+
+                    // Save to related tables
+                    Product product = productRepository.save(new Product(epcCode, productName));
+                    Hub hub = hubRepository.save(new Hub(null, hubType, latitude, longitude));
+                    Event event = eventRepository.save(new Event(null, eventType));
+
+                    // Save to ProductEventLog
+                    ProductEventLog eventLog = ProductEventLog.builder()
+                            .product(product)
+                            .hub(hub)
+                            .event(event)
+                            .eventTime(eventTime)
+                            .build();
+
+                    productEventLogRepository.save(eventLog);
+
+                    // Detect anomalies
+                    anomalyDetectionService.detectAnomalies(new Dummy(epcCode, productName, hubType, eventType, eventTime, latitude, longitude), eventLog);
+
+                } catch (ParseException e) {
+                    System.out.println("Invalid date format: " + line);
+                } catch (Exception e) {
+                    System.out.println("Error processing row: " + line + ", Error: " + e.getMessage());
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,25 @@
+package com.newmeta.service;
+
+import org.springframework.stereotype.Service;
+
+import com.newmeta.domain.Event;
+import com.newmeta.persistence.EventRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class EventService {
+
+	private final EventRepository eventRepo;
+
+	public Event saveIfNotExists(String eventType) {
+        return eventRepo.findByEventType(eventType)
+                .orElseGet(() -> {
+                    Event event = Event.builder()
+                            .eventType(eventType)
+                            .build();
+                    return eventRepo.save(event); // 기본 키는 데이터베이스에서 자동 생성
+                });
+    }
+}

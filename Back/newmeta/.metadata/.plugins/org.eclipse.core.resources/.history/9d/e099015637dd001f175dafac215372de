@@ -1,0 +1,55 @@
+package com.newmeta.controller;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.domain.dto.ProductEventLogDTO;
+import com.newmeta.service.ProductEventLogService;
+
+import lombok.RequiredArgsConstructor;
+@RestController
+@RequestMapping("/producteventLog")
+@RequiredArgsConstructor
+public class ProductEventLogController {
+
+    private final ProductEventLogService productEventLogService;
+
+    @GetMapping("/paged")
+    public ResponseEntity<Page<ProductEventLogDTO>> getPagedLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductEventLogDTO> pagedLogs = productEventLogService.getPagedLogs(pageable);
+        return ResponseEntity.ok(pagedLogs);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProductEventLog>> getAllLogs() {
+        return ResponseEntity.ok(productEventLogService.findAllLogs());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductEventLog> getLogById(@PathVariable Long id) {
+        return productEventLogService.findLogById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<ProductEventLog> createLog(@RequestBody ProductEventLog productEventLog) {
+        return ResponseEntity.ok(productEventLogService.saveLog(productEventLog));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteLog(@PathVariable Long id) {
+        productEventLogService.deleteLog(id);
+        return ResponseEntity.noContent().build();
+    }
+}

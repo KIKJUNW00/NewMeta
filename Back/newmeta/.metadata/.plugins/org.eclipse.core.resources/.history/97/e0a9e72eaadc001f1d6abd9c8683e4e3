@@ -1,0 +1,5 @@
+package com.newmeta.domain.dto;
+
+public class AnomalyDTO {
+
+}

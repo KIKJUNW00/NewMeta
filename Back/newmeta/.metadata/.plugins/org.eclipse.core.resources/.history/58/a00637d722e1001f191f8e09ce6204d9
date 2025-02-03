@@ -1,0 +1,20 @@
+package com.newmeta.domain.dto;
+
+import java.util.Date;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@Data
+@AllArgsConstructor
+public class AnomalyDTO {
+    private Long anomalyId;
+    private String anomalyType;
+    private String reason;
+    private String epcCode;
+    private String productName;
+    private String eventType;
+    private String hubName;
+    private Double latitude;
+    private Double longitude;
+    private Date eventTime;  // 기존 anomalyTimestamp를 eventTime으로 변경
+}

@@ -1,0 +1,163 @@
+package com.newmeta.service;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.newmeta.domain.Dummy;
+import com.newmeta.domain.Event;
+import com.newmeta.domain.Hub;
+import com.newmeta.domain.Product;
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.persistence.EventRepository;
+import com.newmeta.persistence.HubRepository;
+import com.newmeta.persistence.ProductEventLogRepository;
+import com.newmeta.persistence.ProductRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class CsvReaderService {
+    private final ProductRepository productRepository;
+    private final HubRepository hubRepository;
+    private final EventRepository eventRepository;
+    private final ProductEventLogRepository productEventLogRepository;
+    private final AnomalyDetectionService anomalyDetectionService;
+
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final String FILE_PATH = "C:\\test/test_scm_anomaly_data_updated.csv";
+    private int currentLine = 0;
+
+    /**
+     * 🚀 10초마다 한 줄씩 CSV 파일을 처리하는 메서드
+     */
+    @Transactional
+    public void processCsvLine() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
+            String line;
+            int lineNumber = 0;
+
+            // 첫 번째 행(헤더) 건너뛰기
+            reader.readLine(); 
+
+            while ((line = reader.readLine()) != null) {
+                if (lineNumber == currentLine) { // 현재 읽을 행 도달
+                    processRow(line);
+                    currentLine++; // 다음 실행 시 다음 행을 읽도록 설정
+                    break;
+                }
+                lineNumber++;
+            }
+
+            // 파일 끝에 도달하면 다시 처음부터 읽도록 초기화
+            if (line == null) {
+                currentLine = 0;
+            }
+        } catch (IOException e) {
+            log.error("CSV 파일을 읽는 중 오류 발생: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 🚀 한 줄씩 처리하는 로직
+     */
+    private void processRow(String line) {
+        String[] data = line.split(",");
+        if (data.length < 7) {
+            log.warn("❌ Invalid row (필드 개수 부족): {}", line);
+            return;
+        }
+
+        try {
+            String epcCode = data[0].trim();
+            String productName = data[1].trim();
+            String hubType = data[2].trim();
+            String eventType = data[3].trim();
+            Date eventTime = parseDate(data[4].trim());
+
+            // ✅ final 변수 사용하여 해결
+            final Double latitude = parseDouble(data[5].trim(), -90, 90, "latitude");
+            final Double longitude = parseDouble(data[6].trim(), -180, 180, "longitude");
+
+            // 기본값 설정 (null 방지)
+            final Double safeLatitude = (latitude == null) ? 0.0 : latitude;
+            final Double safeLongitude = (longitude == null) ? 0.0 : longitude;
+
+            // 📌 관련 엔터티 저장 또는 재사용
+            Product product = productRepository.findByEpcCode(epcCode)
+                    .orElseGet(() -> productRepository.save(new Product(epcCode, productName)));
+
+            Hub hub = hubRepository.findByHubNameAndLatitudeAndLongitude(hubType, safeLatitude, safeLongitude)
+                    .orElseGet(() -> hubRepository.save(new Hub(null, hubType, safeLatitude, safeLongitude)));
+
+            Event event = eventRepository.findByEventType(eventType)
+                    .orElseGet(() -> eventRepository.save(new Event(null, eventType)));
+
+            // 📌 ProductEventLog 저장
+            ProductEventLog eventLog = ProductEventLog.builder()
+                    .product(product)
+                    .hub(hub)
+                    .event(event)
+                    .eventTime(eventTime)
+                    .build();
+
+            productEventLogRepository.save(eventLog);
+
+            // 📌 이상 탐지 수행
+            anomalyDetectionService.detectAnomalies(
+                    new Dummy(epcCode, productName, hubType, eventType, eventTime, safeLatitude, safeLongitude), eventLog);
+
+            log.info("✅ 처리 완료: {}", line);
+
+        } catch (Exception e) {
+            log.error("❌ Error processing row: {}, Error: {}", line, e.getMessage());
+        }
+    }
+
+    /**
+     * ✅ 날짜 문자열을 Date 타입으로 변환
+     */
+    private Date parseDate(String dateStr) {
+        try {
+            if (dateStr == null || dateStr.isEmpty()) {
+                return null;
+            }
+            if (dateStr.length() == 16) { // 초 단위가 없는 경우 처리
+                dateStr = dateStr + ":00";
+            }
+            return dateFormat.parse(dateStr);
+        } catch (ParseException e) {
+            log.warn("❌ Invalid date format: {}", dateStr);
+            return null;
+        }
+    }
+
+    /**
+     * ✅ 문자열을 Double 타입으로 변환
+     */
+    private Double parseDouble(String value, double min, double max, String fieldName) {
+        try {
+            if (value == null || value.isEmpty()) {
+                return null;
+            }
+            double parsedValue = Double.parseDouble(value);
+            if (parsedValue < min || parsedValue > max) {
+                log.warn("❌ Invalid {}: {}", fieldName, value);
+                return null;
+            }
+            return parsedValue;
+        } catch (NumberFormatException e) {
+            log.warn("❌ Invalid number format for {}: {}", fieldName, value);
+            return null;
+        }
+    }
+}

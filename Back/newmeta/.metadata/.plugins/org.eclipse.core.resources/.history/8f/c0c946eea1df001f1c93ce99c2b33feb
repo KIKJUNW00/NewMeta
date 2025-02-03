@@ -1,0 +1,42 @@
+package com.newmeta.controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.dto.AnomalyDTO;
+import com.newmeta.service.AnomalyLogService;
+
+import lombok.RequiredArgsConstructor;
+
+@CrossOrigin("*")
+@RestController
+@RequestMapping("/api/anomalies")
+@RequiredArgsConstructor
+public class AnomalyLogController {
+
+    private final AnomalyLogService anomalyLogService;
+
+    // ✅ 모든 이상치 조회
+    @GetMapping
+    public ResponseEntity<List<AnomalyDTO>> getAllAnomalyDetails() {
+        List<AnomalyDTO> anomalies = anomalyLogService.getAllAnomalyDetails();
+        return ResponseEntity.ok(anomalies);
+    }
+
+    // ✅ EPC 코드로 이상 로그 검색
+    @GetMapping("/{epcCode}")
+    public ResponseEntity<List<AnomalyLog>> getAnomaliesByEpc(@PathVariable String epcCode) {
+        List<AnomalyLog> anomalies = anomalyLogService.getAnomaliesByEpc(epcCode);
+        return ResponseEntity.ok(anomalies);
+    }
+
+    // ✅ 제품명으로 이상 로그 검색
+    @GetMapping("/by-product/{productName}")
+    public ResponseEntity<List<AnomalyLog>> getAnomaliesByProduct(@PathVariable String productName) {
+        List<AnomalyLog> anomalies = anomalyLogService.getAnomaliesByProduct(productName);
+        return ResponseEntity.ok(anomalies);
+    }
+}

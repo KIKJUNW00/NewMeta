@@ -1,0 +1,14 @@
+package com.newmeta.persistence;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.newmeta.domain.Hub;
+
+public interface HubRepository extends JpaRepository<Hub, Long> {
+	Optional<Hub> findByHubTypeAndLatitudeAndLongitude(String hubType, Double latitude, Double longitude);
+	// 허브 이름으로 조회
+    Optional<Hub> findByHubName(String hubName);
+
+}
