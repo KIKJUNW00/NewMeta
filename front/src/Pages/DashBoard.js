@@ -22,7 +22,7 @@ export default function DashBoard() {
                          bg-gray-50 p-4 shadow">
             <div className='w-full h-full flex flex-col'>
               <div className='flex justify-between pb-2'>
-                <h2 className="text-lg font-bold text-gray-700">HUB별 물품량1</h2>
+                <h2 className="text-lg font-bold text-gray-700">HUB별 물품량</h2>
                 <div className="flex flex-col space-y-2">
                   <CircleLegend />
                 </div>
@@ -45,7 +45,7 @@ export default function DashBoard() {
         </div>
 
         {/* 아랫 섹션 */}
-        <div className="flex justify-between space-x-4 h-1/2">
+        <div className="flex space-x-4 h-1/2">
 
           {/* 왼쪽 아래 epc데이터 */}
           <div className="flex-1 border-solid border-2 border-black

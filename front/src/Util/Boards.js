@@ -5,37 +5,50 @@ import { useState, useEffect } from "react";
 export function Board({ onProductClick }) {
     const [productData, setProductData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const itemsPerPage = 5;
 
     // API 데이터 가져오기
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchAllData = async () => {
             try {
-                const response = await fetch("http://10.125.121.228:8080/producteventLog/paged");
-                const data = await response.json();
-                
-                // console.log("API 응답 데이터:", data); // 실제 데이터 확인
-                // console.log(Array.isArray(data)); // true이면 배열, false이면 다른 형식
+                let allData = [];
+                let page = 0;
+                let totalPages = 1; // 초기값 설정
 
+                while (page < totalPages) {
+                    const response = await fetch(`http://10.125.121.228:8080/producteventLog/paged?page=${page}&size=30`);
+                    const data = await response.json();
 
-                if (data && Array.isArray(data.items)) {
-                    // 필요한 데이터만 추출 (seq, productName, epcCode)
-                    const transformedData = data.map((item) => ({
-                        seq: item.seq,
-                        productName: item.productName,
-                        epcCode: item.epcCode,
-                    }));
-                    setProductData(transformedData);
-                } else {
-                    console.error("API 데이터 형식이 예상과 다릅니다.", data);
+                    if (data && Array.isArray(data.content)) {
+                        allData = [...allData, ...data.content];
+                        totalPages = data.totalPages; // API에서 반환된 전체 페이지 수
+                        page += 1; // 다음 페이지 요청
+                    } else {
+                        console.error("API 데이터 형식이 예상과 다릅니다.", data);
+                        break;
+                    }
                 }
+
+                // productName 중복 제거: 첫 번째로 나오는 것만 남기기
+                const uniqueData = [];
+                const seenProductNames = new Set();
+
+                allData.forEach((item) => {
+                    if (!seenProductNames.has(item.productName)) {
+                        seenProductNames.add(item.productName);
+                        uniqueData.push(item);
+                    }
+                });
+
+                setProductData(uniqueData); // 중복 제거된 데이터를 상태로 설정
             } catch (error) {
                 console.error("API 요청 오류:", error);
             }
         };
 
-        fetchData();
+        fetchAllData();
     }, []);
+
 
     const totalPages = Math.ceil(productData.length / itemsPerPage);
     const paginatedData = productData.slice(
@@ -44,48 +57,46 @@ export function Board({ onProductClick }) {
     );
 
     return (
-        <div className="relative overflow-x-auto mt-2 border-2 border-black">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                    <tr>
-                        <th className="px-6 py-3">No</th>
-                        <th className="px-6 py-3">Product Name</th>
-                        <th className="px-6 py-3">EPC Code</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {paginatedData.map((product, index) => (
-                        <tr
-                            key={product.epcCode}
-                            className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                            onClick={() => onProductClick(product.epcCode)} // 클릭 시 EPC 코드 전달
-                        >
-                            <td className="px-6 py-4">{product.seq}</td>
-                            <td className="px-6 py-4">{product.productName}</td>
-                            <td className="px-6 py-4">{product.epcCode}</td>
+        <>
+            <div className="relative overflow-x-auto mt-2 border-2 border-black">
+                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th className="px-6 py-3">No</th>
+                            <th className="px-6 py-3">Product Name</th>
+                            <th className="px-6 py-3">EPC Code</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {paginatedData.map((product, index) => (
+                            <tr key={product.epcCode}>
+                                <td className="px-6 py-4">{index + 1}</td> {/* 번호를 1, 2, 3...으로 표시 */}
+                                <td className="px-6 py-4">{product.productName}</td>
+                                <td className="px-6 py-4">{product.epcCode}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
             {/* 페이징 */}
-            <div className="flex justify-between items-center p-4">
+            <div className="flex justify-center mt-2.5">
                 <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
                 >
-                    Previous
+                    Prev
                 </button>
-                <span>Page {currentPage} of {totalPages}</span>
+                <span className='px-4 py-2'>Page {currentPage} of {totalPages}</span>
                 <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
                 >
                     Next
                 </button>
             </div>
-        </div>
+        </>
     );
 }
 
@@ -95,7 +106,7 @@ export function BoardX() {
 
     const [productData, setProductData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 3;
+    const ITEMS_PER_PAGE = 5;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -131,52 +142,52 @@ export function BoardX() {
 
     return (
         <>
-        <div className="relative overflow-x-auto mt-2 border-2 border-black max-w-full">
-            <table className="w-full text-xs text-left text-gray-500 dark:text-gray-400 table-fixed">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                    <tr>
-                        <th className="px-6 py-2 w-1/5">Product Name</th>
-                        <th className="px-6 py-2 w-1/5">Anomaly Type</th>
-                        <th className="px-6 py-2 w-1/5">Reason</th>
-                        <th className="px-6 py-2 w-1/5">Timestamp</th>
-                        <th className="px-6 py-2 w-1/5">Hub</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {displayedData.map((item) => (
-                        <tr key={item.epcCode} className="bg-red-200 border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white truncate">
-                                {item.anomalyProductName}
-                            </th>
-                            <td className="px-6 py-4 truncate">{item.anomalyType}</td>
-                            <td className="px-6 py-4 truncate">{item.reason}</td>
-                            <td className="px-6 py-4">{item.anomalyTimestamp}</td>
-                            <td className="px-6 py-4 truncate">{item.anomalyHub}</td>
+            <div className="relative overflow-x-auto mt-2 border-2 border-black max-w-full">
+                <table className="w-full text-xs text-left text-gray-500 dark:text-gray-400 table-fixed">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th className="px-6 py-2 w-1/5">Product Name</th>
+                            <th className="px-6 py-2 w-1/5">Anomaly Type</th>
+                            <th className="px-6 py-2 w-1/5">Reason</th>
+                            <th className="px-6 py-2 w-1/5">Timestamp</th>
+                            <th className="px-6 py-2 w-1/5">Hub</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-        
-        {/* 페이지 버튼*/}
-        <div className="flex justify-center mt-2.5">
-            <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-            >
-                Prev
-            </button>
-            <span className="px-4 py-2">Page {currentPage} of {totalPages}</span>
-            <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-            >
-                Next
-            </button>
-        </div>
-    </>
+                    </thead>
+                    <tbody>
+                        {displayedData.map((item) => (
+                            <tr key={item.epcCode} className="bg-red-200 border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white truncate">
+                                    {item.anomalyProductName}
+                                </th>
+                                <td className="px-6 py-4 truncate">{item.anomalyType}</td>
+                                <td className="px-6 py-4 truncate">{item.reason}</td>
+                                <td className="px-6 py-4 truncate">{item.anomalyTimestamp}</td>
+                                <td className="px-6 py-4 truncate">{item.anomalyHub}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* 페이지 버튼*/}
+            <div className="flex justify-center mt-2.5">
+                <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                >
+                    Prev
+                </button>
+                <span className="px-4 py-2">Page {currentPage} of {totalPages}</span>
+                <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                >
+                    Next
+                </button>
+            </div>
+        </>
     )
 }
 
