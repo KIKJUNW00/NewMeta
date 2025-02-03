@@ -17,8 +17,13 @@ export default function SCM() {
         </div>
 
         <div className='flex flex-col w-full h-full ml-5  '>
-          <div className='flex w-full h-[60%] border-solid border-2 border-black bg-gray-50 justify-center items-center'>
-            <h2 className="text-lg font-bold text-gray-700">날짜별 이상치</h2>
+          <div className='flex flex-col w-full h-[60%] 
+                          p-4
+                          border-solid border-2 border-black bg-gray-50 '>
+            <div>
+              <h2 className="text-lg font-bold text-gray-700">날짜별 이상치</h2>
+            </div>
+            
             <div className='flex flex-col justify-center items-center'>
               <SCMarchi />
             </div>

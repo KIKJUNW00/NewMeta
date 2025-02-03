@@ -65,7 +65,7 @@ export default function Login() {
       }
     } catch (error) {
       if (error.response) {
-        console.error('Response Error:', error.response.data);
+        console.error('Response Error:', error.response.data, errorMessage);
         setErrorMessage('로그인 정보가 일치하지 않습니다');
       } else {
         console.error('Network Error:', error.message);

@@ -22,7 +22,7 @@ export default function DashBoard() {
                          bg-gray-50 p-4 shadow">
             <div className='w-full h-full flex flex-col'>
               <div className='flex justify-between pb-2'>
-                <h2 className="text-lg font-bold text-gray-700">국가별 운송량</h2>
+                <h2 className="text-lg font-bold text-gray-700">HUB별 물품량</h2>
                 <div className="flex flex-col space-y-2">
                   <CircleLegend />
                 </div>
