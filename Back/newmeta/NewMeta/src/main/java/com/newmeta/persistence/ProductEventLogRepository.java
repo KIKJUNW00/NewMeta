@@ -14,41 +14,36 @@ import com.newmeta.domain.ProductEventLog;
 @Repository
 public interface ProductEventLogRepository extends JpaRepository<ProductEventLog, Long> {
 
-    // 특정 EPC 코드 관련 이벤트 로그 조회
+    // ✅ 특정 EPC 코드의 모든 이벤트 로그 조회
     List<ProductEventLog> findByProductEpcCode(String epcCode);
 
-    // 특정 EPC 코드에서 특정 이벤트 타입을 제외한 로그 조회
+    // ✅ 특정 EPC 코드와 이벤트 타입을 제외한 로그 조회
     List<ProductEventLog> findByProductEpcCodeAndEventEventTypeNot(String epcCode, String eventType);
 
-    // 특정 EPC 코드와 이벤트 타입 존재 여부 확인 (위조, 불법 유통 탐지)
+    // ✅ 특정 EPC 코드 및 이벤트 타입 존재 여부 확인
     boolean existsByProductEpcCodeAndEventEventType(String epcCode, String eventType);
     
-    // 특정 Hub에서 발생한 이벤트 로그 조회
+    // ✅ 특정 Hub에서 발생한 이벤트 로그 조회
     List<ProductEventLog> findByHubHubId(Long hubId);
 
-    // 특정 Event ID와 관련된 로그 조회
+    // ✅ 특정 Event ID와 관련된 로그 조회
     List<ProductEventLog> findByEventEventId(Long eventId);
 
-    // 페이징 처리된 로그 조회
+    // ✅ 페이징 처리된 로그 조회
     Page<ProductEventLog> findAll(Pageable pageable);
 
-    
-    // 특정 EPC 코드의 첫 번째 이벤트 조회 (Commissioning 및 Custom_inbound 검출)
+    // ✅ 특정 EPC 코드의 가장 첫 번째 이벤트 조회
     Optional<ProductEventLog> findFirstByProductEpcCodeOrderByEventTimeAsc(String epcCode);
 
-    // 특정 EPC 코드가 존재하는지 확인 (Read Point에서 EPC 누락 검출)
+    // ✅ 특정 EPC 코드 존재 여부 확인
     boolean existsByProductEpcCode(String epcCode);
-    
-    // eventTime 기준 검색 (Date 타입 적용)
+
+    // ✅ 특정 시간 범위 내 이벤트 로그 조회
     List<ProductEventLog> findByEventTimeBetween(Date startTime, Date endTime);
 
-    // eventTime 기준 정렬하여 가장 최근 이벤트 조회
+    // ✅ 특정 EPC 코드의 최신 이벤트 조회
     Optional<ProductEventLog> findFirstByProductEpcCodeOrderByEventTimeDesc(String epcCode);
     
+    // ✅ 특정 Hub 이름으로 이벤트 로그 조회
     List<ProductEventLog> findByHub_HubName(String hubName);
-    /**
-     * 🚀 특정 제품의 이동 경로 조회 (SCM 과정별 데이터 반환)
-     */
-    
-
 }

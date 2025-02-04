@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Dummy {
     private String epcCode;       // EPC 코드
+    private Long productSerial; // 제품 시리얼 번호
     private String productName;   // 제품 이름
     private String hubType;       // 허브 유형
     private String eventType;     // 이벤트 유형

@@ -234,6 +234,12 @@ public class AnomalyDetectionService {
 //            HttpEntity<Map<String, Object>> request = new HttpEntity<>(convertDummyToAIInput(dummy), headers);
 //            ResponseEntity<Map> response = restTemplate.exchange(fastApiUrl, HttpMethod.POST, request, Map.class);
 //
+//            if (response.getBody() == null || !response.getBody().containsKey("is_anomaly")) {
+//                log.warn("⚠️ FastAPI 응답이 비어 있음, 기본값 false 반환");
+//                return false;
+//            }
+//
+//
 //            return (boolean) response.getBody().get("is_anomaly");
 //        } catch (Exception e) {
 //            log.error("❌ FastAPI 이상 탐지 호출 실패", e);
@@ -246,13 +252,11 @@ public class AnomalyDetectionService {
 //     */
 //    private Map<String, Object> convertDummyToAIInput(Dummy dummy) {
 //        return Map.of(
-//            "epcCode", dummy.getEpcCode(),
-//            "productName", dummy.getProductName(),
-//            "hubType", dummy.getHubType(),
-//            "eventType", dummy.getEventType(),
-//            "eventTime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dummy.getEventTime()),
-//            "latitude", dummy.getLatitude(),
-//            "longitude", dummy.getLongitude()
+//            "epc_code", dummy.getEpcCode(),
+//            "product_name", dummy.getProductName(),
+//            "hub_type", dummy.getHubType(),
+//            "event_type", dummy.getEventType(),
+//            "event_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dummy.getEventTime())
 //        );
 //    }
 }

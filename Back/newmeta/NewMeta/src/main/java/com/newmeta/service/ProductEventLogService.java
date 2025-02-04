@@ -131,20 +131,20 @@ public class ProductEventLogService {
     }
 
     /**
-     * ✅ 엔티티를 DTO로 변환
+     * ✅ ProductEventLog -> ProductEventLogDTO 변환 (출력 JSON 맞춤)
      */
     private ProductEventLogDTO convertToDTO(ProductEventLog log) {
-        return new ProductEventLogDTO(
-                log.getProductEventLogId(),
-                log.getEventTime(),
-                log.getProduct().getEpcCode(),
-                log.getProduct().getProductName(),
-                log.getHub().getHubName(),
-                log.getEvent().getEventType(),
-                log.getHub().getLatitude(),
-                log.getHub().getLongitude(),
-                log.getIsAnomaly()
-        );
+        return ProductEventLogDTO.builder()
+                .productEventLogId(log.getProductEventLogId()) // JSON `productEventLogId`와 매칭
+                .eventTime(log.getEventTime())
+                .epcCode(log.getProduct().getEpcCode())
+                .productName(log.getProduct().getProductName())
+                .eventType(log.getEvent().getEventType())
+                .hubName(log.getHub().getHubName())
+                .latitude(log.getHub().getLatitude())
+                .longitude(log.getHub().getLongitude())
+                .anomaly(log.getIsAnomaly()) // boolean 타입 유지
+                .build();
     }
 
     @Transactional(readOnly = true)
