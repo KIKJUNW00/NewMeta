@@ -9,14 +9,23 @@ export default function CircleLegend() {
                     className="mr-2 w-4 h-4 rounded-full"
                     style={{ backgroundColor: 'rgba(54, 162, 235, 0.5)' }}
                 />
-                <span>Korea</span>
+                <span>Seoul</span>
             </div>
+            
             <div className="flex items-center">
                 <span
                     className="mr-2 w-4 h-4 rounded-full"
                     style={{ backgroundColor: 'rgba(255, 99, 132, 0.5)' }}
                 />
-                <span>China</span>
+                <span>Busan</span>
+            </div>
+
+            <div className="flex items-center">
+                <span
+                    className="ml-2 mr-2 w-4 h-4 rounded-full"
+                    style={{ backgroundColor: 'rgba(173, 255, 47, 0.5)' }}
+                />
+                <span>Incheon</span>
             </div>
         </div>
     )

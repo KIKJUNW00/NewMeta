@@ -23,6 +23,7 @@ export default function MapComponent2({ readPoints, selectedEpcCode }) {
   }, []);
 
   useEffect(() => {
+    
     if (!mapRef.current || !Array.isArray(readPoints) || readPoints.length === 0) return;
 
     // 기존 마커 및 선 제거
@@ -42,7 +43,7 @@ export default function MapComponent2({ readPoints, selectedEpcCode }) {
         return;
     }
 
-    //  중복된 위도, 경도를 제거 (같은 좌표는 1개만 유지)
+    // 🎯 중복된 위도, 경도를 제거 (같은 좌표는 1개만 유지)
     const uniquePoints = [];
     const seenCoordinates = new Set();
 
@@ -65,7 +66,7 @@ export default function MapComponent2({ readPoints, selectedEpcCode }) {
       // anomaly 상태에 따라 색상 설정 (정상: 초록색, 이상: 빨간색)
       const fillColor = anomaly ? "red" : "yellowgreen";
 
-      //  번호 아이콘 생성 (번호가 잘 보이도록 스타일 개선)
+      // 🎯 번호 아이콘 생성 (번호가 잘 보이도록 스타일 개선)
       const numberIcon = L.divIcon({
         className: "custom-number-marker",
         html: `<div style="
@@ -87,7 +88,7 @@ export default function MapComponent2({ readPoints, selectedEpcCode }) {
 
       // 🎯 위치 점 마커 추가 (색상: 정상(초록), 이상(빨강))
       L.circleMarker([latitude, longitude], {
-        radius: 15, // 조금 더 키움
+        radius: 10, // 조금 더 키움
         fillColor: fillColor,
         fillOpacity: 1,
       }).addTo(markerLayerRef.current);

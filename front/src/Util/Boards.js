@@ -1,19 +1,18 @@
 import React from 'react'
 import { useState, useEffect } from "react";
 
-// 대시보드 표
+//대시보드 표
 export function Board({ onProductClick }) {
     const [productData, setProductData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
-    // API 데이터 가져오기
     useEffect(() => {
         const fetchAllData = async () => {
             try {
                 let allData = [];
                 let page = 0;
-                let totalPages = 1; // 초기값 설정
+                let totalPages = 1;
 
                 while (page < totalPages) {
                     const response = await fetch(`http://10.125.121.228:8080/producteventLog/paged?page=${page}&size=30`);
@@ -21,26 +20,29 @@ export function Board({ onProductClick }) {
 
                     if (data && Array.isArray(data.content)) {
                         allData = [...allData, ...data.content];
-                        totalPages = data.totalPages; // API에서 반환된 전체 페이지 수
-                        page += 1; // 다음 페이지 요청
+                        totalPages = data.totalPages;
+                        page += 1;
                     } else {
                         console.error("API 데이터 형식이 예상과 다릅니다.", data);
                         break;
                     }
                 }
 
-                // productName 중복 제거: 첫 번째로 나오는 것만 남기기
+                console.log("📌 전체 데이터 개수 (API 응답):", allData.length);
+                setProductData(allData);
+
+                // productName 중복 제거
                 const uniqueData = [];
                 const seenProductNames = new Set();
 
                 allData.forEach((item) => {
-                    if (!seenProductNames.has(item.productName)) {
-                        seenProductNames.add(item.productName);
+                    if (!seenProductNames.has(item.epcCode)) {
+                        seenProductNames.add(item.epcCode);
                         uniqueData.push(item);
                     }
                 });
 
-                setProductData(uniqueData); // 중복 제거된 데이터를 상태로 설정
+                setProductData(uniqueData);
             } catch (error) {
                 console.error("API 요청 오류:", error);
             }
@@ -48,7 +50,6 @@ export function Board({ onProductClick }) {
 
         fetchAllData();
     }, []);
-
 
     const totalPages = Math.ceil(productData.length / itemsPerPage);
     const paginatedData = productData.slice(
@@ -58,8 +59,8 @@ export function Board({ onProductClick }) {
 
     return (
         <>
-            <div className="relative overflow-x-auto mt-2 border-2 border-black">
-                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <div className="relative overflow-x-auto mt-2 border border-black">
+                <table className="w-full min-w-[300px] text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th className="px-6 py-3">No</th>
@@ -69,16 +70,24 @@ export function Board({ onProductClick }) {
                     </thead>
                     <tbody>
                         {paginatedData.map((product, index) => (
-                            <tr key={product.epcCode}>
-                                <td className="px-6 py-4">{index + 1}</td> {/* 번호를 1, 2, 3...으로 표시 */}
-                                <td className="px-6 py-4">{product.productName}</td>
-                                <td className="px-6 py-4">{product.epcCode}</td>
+                            <tr 
+                                key={product.epcCode} 
+                                className="cursor-pointer hover:bg-gray-100"
+                                onClick={() => {
+                                    console.log("클릭한 EPC 코드:", product.epcCode); // 디버깅
+                                    onProductClick(product.epcCode, productData); // EPC 코드 전달
+                                }}
+                                // onClick={() => onProductClick(product.epcCode)} // 클릭 시 epcCode 전달
+                            >
+                                <td className="px-6 py-4 truncate">{index + 1}</td>
+                                <td className="px-6 py-4 truncate">{product.productName}</td>
+                                <td className="px-6 py-4 truncate">{product.epcCode}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
-            {/* 페이징 */}
+
             <div className="flex justify-center mt-2.5">
                 <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -99,6 +108,7 @@ export function Board({ onProductClick }) {
         </>
     );
 }
+
 
 
 // 대시보드 이상치 테이블
@@ -142,7 +152,7 @@ export function BoardX() {
 
     return (
         <>
-            <div className="relative overflow-x-auto mt-2 border-2 border-black max-w-full">
+            <div className="relative overflow-x-auto mt-2 border border-black max-w-full">
                 <table className="w-full text-xs text-left text-gray-500 dark:text-gray-400 table-fixed">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>

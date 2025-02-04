@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MapComponent from '../Util/MapComponent';
 import MapComponent2 from '../Util/MapComponent2'
 import Chart1 from '../Util/Chart1'
 import CircleLegend from '../Util/CircleLegend';
-import {Board} from '../Util/Boards';
-import {BoardX} from '../Util/Boards'
+import { Board } from '../Util/Boards';
+import { BoardX } from '../Util/Boards'
 
 export default function DashBoard() {
 
-  const [readPoints, setReadPoints] = useState([]); // 선택된 readPoints 관리
+  const [selectedEpcCode, setSelectedEpcCode] = useState(null);
+  const [eventLogData, setEventLogData] = useState([]);
+
+  useEffect(() => {
+    const fetchEventLogData = async () => {
+      try {
+        const response = await fetch("http://10.125.121.228:8080/producteventLog/paged?page=0&size=159");
+        const data = await response.json();
+        if (data && Array.isArray(data.content)) {
+          setEventLogData(data.content);
+        } else {
+          console.error("API 데이터 형식 오류", data);
+        }
+      } catch (error) {
+        console.error("API 요청 오류:", error);
+      }
+    };
+
+    fetchEventLogData();
+  }, []);
 
   return (
     <div className="h-screen bg-gray-100 flex items-center justify-center">
@@ -18,7 +37,7 @@ export default function DashBoard() {
         <div className="flex space-x-4 h-1/2">
 
           {/* 윗쪽 왼쪽 섹션 국가별 지도 product 분포표 한국/중국 */}
-          <div className="flex w-[40%] h-full border-solid border-2 border-black
+          <div className="flex w-[40%] h-full border-solid border border-black
                          bg-gray-50 p-4 shadow">
             <div className='w-full h-full flex flex-col'>
               <div className='flex justify-between pb-2'>
@@ -27,7 +46,7 @@ export default function DashBoard() {
                   <CircleLegend />
                 </div>
               </div>
-              <div className="flex border-solid border-2 border-black
+              <div className="flex border-solid border border-black
                               overflow-hidden">
                 <MapComponent />
               </div>
@@ -35,7 +54,7 @@ export default function DashBoard() {
           </div>
 
           {/* 윗쪽 오른쪽 섹션 일별이상치, 월별 이상치, 연도별 이상치 */}
-          <div className="flex-1 border-solid border-2 border-black
+          <div className="flex-1 border-solid border border-black
                         bg-gray-50 p-4 shadow">
             <h2 className="text-lg font-bold text-gray-700">날짜별 이상치</h2>
 
@@ -48,33 +67,33 @@ export default function DashBoard() {
         <div className="flex space-x-4 h-1/2">
 
           {/* 왼쪽 아래 epc데이터 */}
-          <div className="flex-1 border-solid border-2 border-black
+          <div className="flex-1 border-solid border border-black
                         bg-gray-50 p-4 shadow">
 
             <div className='flex-1 flex-col'>
               <h2 className="text-lg font-bold text-gray-700">EPC데이터</h2>
 
-              <Board onProductClick={(points) => setReadPoints(points)} />
+              <Board onProductClick={setSelectedEpcCode} />
             </div>
 
           </div>
 
           {/* 오른쪽중간 epc데이터 누르면 scm과정 */}
-          <div className="flex-1 border-solid border-2 border-black
+          <div className="flex-1 border-solid border border-black
                         bg-gray-50 p-4 shadow">
             <div className='flex flex-col '>
               <h2 className="text-lg font-bold text-gray-700">SCM</h2>
-              <div className="flex-1 border-solid border-2 border-black
+              <div className="flex-1 border-solid border border-black
                               overflow-hidden">
 
-                <MapComponent2 readPoints={readPoints} />
+                <MapComponent2 readPoints={eventLogData} selectedEpcCode={selectedEpcCode} />
               </div>
             </div>
 
           </div>
 
           {/* 오른쪽 아래 이상치 리스트만 띄우기 */}
-          <div className="flex-1 border-solid border-2 border-black
+          <div className="flex-1 border-solid border border-black
                         bg-gray-50 p-4 shadow">
 
             <div className='flex-1 flex-col'>
