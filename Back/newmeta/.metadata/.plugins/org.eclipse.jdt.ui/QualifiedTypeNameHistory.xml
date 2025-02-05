@@ -1,23 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <qualifiedTypeNameHistroy>
-    <fullyQualifiedTypeName name="jakarta.persistence.EntityManager"/>
-    <fullyQualifiedTypeName name="java.util.function.Supplier"/>
-    <fullyQualifiedTypeName name="com.newmeta.persistence.ProductRepository"/>
-    <fullyQualifiedTypeName name="jakarta.annotation.PostConstruct"/>
-    <fullyQualifiedTypeName name="jakarta.persistence.Temporal"/>
-    <fullyQualifiedTypeName name="jakarta.persistence.CascadeType"/>
     <fullyQualifiedTypeName name="jakarta.persistence.FetchType"/>
     <fullyQualifiedTypeName name="java.time.LocalDateTime"/>
     <fullyQualifiedTypeName name="java.time.format.DateTimeFormatter"/>
     <fullyQualifiedTypeName name="java.time.format.DateTimeParseException"/>
     <fullyQualifiedTypeName name="org.springframework.transaction.annotation.Propagation"/>
-    <fullyQualifiedTypeName name="com.newmeta.domain.Event"/>
-    <fullyQualifiedTypeName name="org.springframework.data.domain.Page"/>
-    <fullyQualifiedTypeName name="org.springframework.data.domain.Pageable"/>
     <fullyQualifiedTypeName name="lombok.extern.java.Log"/>
     <fullyQualifiedTypeName name="org.apache.commons.logging.Log"/>
     <fullyQualifiedTypeName name="com.fasterxml.jackson.annotation.JsonFormat"/>
-    <fullyQualifiedTypeName name="java.text.ParseException"/>
     <fullyQualifiedTypeName name="com.newmeta.persistence.AnomalyLogRepository"/>
     <fullyQualifiedTypeName name="org.springframework.context.annotation.Lazy"/>
     <fullyQualifiedTypeName name="java.util.List"/>
@@ -35,7 +25,6 @@
     <fullyQualifiedTypeName name="jakarta.persistence.JoinColumn"/>
     <fullyQualifiedTypeName name="com.fasterxml.jackson.annotation.JsonIgnore"/>
     <fullyQualifiedTypeName name="lombok.extern.slf4j.Slf4j"/>
-    <fullyQualifiedTypeName name="com.newmeta.persistence.ProductEventLogRepository"/>
     <fullyQualifiedTypeName name="com.newmeta.domain.Hub"/>
     <fullyQualifiedTypeName name="org.apache.tomcat.util.net.openssl.ciphers.Authentication"/>
     <fullyQualifiedTypeName name="org.springframework.security.authentication.UsernamePasswordAuthenticationToken"/>
@@ -52,12 +41,23 @@
     <fullyQualifiedTypeName name="com.newmeta.service.WebSocketService"/>
     <fullyQualifiedTypeName name="org.springframework.beans.factory.annotation.Autowired"/>
     <fullyQualifiedTypeName name="org.junit.jupiter.api.Test"/>
-    <fullyQualifiedTypeName name="java.util.Map"/>
     <fullyQualifiedTypeName name="java.util.Date"/>
-    <fullyQualifiedTypeName name="java.util.Collections"/>
     <fullyQualifiedTypeName name="lombok.NoArgsConstructor"/>
     <fullyQualifiedTypeName name="lombok.Builder"/>
     <fullyQualifiedTypeName name="com.newmeta.domain.dto.AnomalyDTO"/>
-    <fullyQualifiedTypeName name="java.util.HashMap"/>
     <fullyQualifiedTypeName name="java.util.stream.Collectors"/>
+    <fullyQualifiedTypeName name="org.springframework.data.jpa.repository.Query"/>
+    <fullyQualifiedTypeName name="com.newmeta.cache.EventHistoryCache"/>
+    <fullyQualifiedTypeName name="java.util.Collections"/>
+    <fullyQualifiedTypeName name="java.util.Map"/>
+    <fullyQualifiedTypeName name="java.util.Comparator"/>
+    <fullyQualifiedTypeName name="com.newmeta.domain.dto.ProductEventLogDTO"/>
+    <fullyQualifiedTypeName name="java.util.HashMap"/>
+    <fullyQualifiedTypeName name="com.newmeta.persistence.ProductEventLogRepository"/>
+    <fullyQualifiedTypeName name="org.springframework.data.domain.Page"/>
+    <fullyQualifiedTypeName name="java.awt.print.Pageable"/>
+    <fullyQualifiedTypeName name="org.springframework.data.domain.Pageable"/>
+    <fullyQualifiedTypeName name="com.newmeta.service.AnomalyDetectionService"/>
+    <fullyQualifiedTypeName name="com.newmeta.domain.Event"/>
+    <fullyQualifiedTypeName name="java.text.ParseException"/>
 </qualifiedTypeNameHistroy>

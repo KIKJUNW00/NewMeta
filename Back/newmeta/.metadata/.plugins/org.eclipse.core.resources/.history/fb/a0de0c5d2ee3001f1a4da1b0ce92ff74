@@ -1,0 +1,159 @@
+package com.newmeta.service;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import com.newmeta.domain.AnomalyLog;
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.domain.dto.AnomalyDTO;
+import com.newmeta.domain.dto.ProductEventLogDTO;
+import com.newmeta.persistence.AnomalyLogRepository;
+import com.newmeta.persistence.ProductEventLogRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 📡 SCM 데이터 처리 서비스
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class SCMDataService {
+
+    private final ProductEventLogRepository productEventLogRepository;
+    private final AnomalyLogRepository anomalyLogRepository;
+    private final WebSocketService webSocketService; // ✅ WebSocketService 추가
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    /**
+     * 🚀 [특정 EPC 코드의 제품 이동 경로 조회]
+     */
+    public List<ProductEventLogDTO> getProductMovement(String epcCode) {
+        return productEventLogRepository.findByProductEpcCode(epcCode).stream()
+                .sorted(Comparator.comparing(ProductEventLog::getEventTime)) // 시간순 정렬
+                .map(this::convertProductEventLogToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 🚀 [특정 EPC 코드의 제품 이동 경로 추적]
+     */
+    public List<ProductEventLogDTO> trackProductMovement(String epcCode) {
+        return productEventLogRepository.findByProductEpcCode(epcCode).stream()
+                .sorted(Comparator.comparing(ProductEventLog::getEventTime))
+                .map(this::convertProductEventLogToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 🚀 [허브별 물류량 조회]
+     */
+    public Map<String, Long> getHubStatistics() {
+        return productEventLogRepository.findAll().stream()
+                .collect(Collectors.groupingBy(
+                        log -> log.getHub().getHubName(),
+                        Collectors.counting()
+                ));
+    }
+
+    /**
+     * 🚀 [SCM 데이터 조회] - 필터링 포함
+     */
+    public List<Map<String, Object>> getFilteredSCMData(String eventType, String hubName, String startDate, String endDate) {
+        return productEventLogRepository.findAll().stream()
+                .filter(log -> (eventType == null || log.getEvent().getEventType().equals(eventType)))
+                .filter(log -> (hubName == null || log.getHub().getHubName().equals(hubName)))
+                .filter(log -> isWithinDateRange(log.getEventTime(), startDate, endDate))
+                .map(this::convertProductEventLogToMap)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 🚀 [이상 탐지 데이터 조회] - 필터링 포함
+     */
+    public List<AnomalyDTO> getFilteredAnomalyData(String epcCode, String hubName, String productName, String startDate, String endDate) {
+        return anomalyLogRepository.findAll().stream()
+                .map(this::convertAnomalyLogToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 🚀 [특정 제품의 최신 이벤트 로그 조회]
+     */
+    public Optional<ProductEventLogDTO> getLatestProductEventLog(String epcCode) {
+        return productEventLogRepository.findByProductEpcCode(epcCode).stream()
+                .max(Comparator.comparing(ProductEventLog::getEventTime)) // 최신 이벤트 찾기
+                .map(this::convertProductEventLogToDTO);
+    }
+
+    /**
+     * ✅ [도움 메서드] ProductEventLog → ProductEventLogDTO 변환
+     */
+    private ProductEventLogDTO convertProductEventLogToDTO(ProductEventLog log) {
+        return ProductEventLogDTO.builder()
+                .epcCode(log.getProduct().getEpcCode())
+                .productName(log.getProduct().getProductName())
+                .eventType(log.getEvent().getEventType())
+                .hubName(log.getHub().getHubName())
+                .eventTime(log.getEventTime())
+                .latitude(log.getHub().getLatitude())
+                .longitude(log.getHub().getLongitude())
+                .build();
+    }
+
+    /**
+     * ✅ [도움 메서드] ProductEventLog → Map 변환
+     */
+    private Map<String, Object> convertProductEventLogToMap(ProductEventLog log) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("epcCode", log.getProduct().getEpcCode());
+        result.put("productName", log.getProduct().getProductName());
+        result.put("hub", log.getHub().getHubName());
+        result.put("eventType", log.getEvent().getEventType());
+        result.put("eventTime", dateFormat.format(log.getEventTime()));
+        return result;
+    }
+
+    /**
+     * ✅ [도움 메서드] AnomalyLog → AnomalyDTO 변환
+     */
+    private AnomalyDTO convertAnomalyLogToDTO(AnomalyLog log) {
+        return AnomalyDTO.builder()
+                .anomalyType(log.getAnomalyType())
+                .reason(log.getReason())
+                .epcCode(log.getEpcCode())
+                .anomalyTimestamp(log.getAnomalyTimestamp())
+                .anomalyEventType(log.getAnomalyEventType())
+                .anomalyHub(log.getAnomalyHub())
+                .anomalyProductName(log.getAnomalyProductName())
+                .latitude(log.getLatitude())
+                .longitude(log.getLongitude())
+                .build();
+    }
+
+    /**
+     * ✅ [도움 메서드] 날짜 범위 검사
+     */
+    private boolean isWithinDateRange(Date eventTime, String startDate, String endDate) {
+        try {
+            Date start = startDate != null ? dateFormat.parse(startDate) : null;
+            Date end = endDate != null ? dateFormat.parse(endDate) : null;
+            return (start == null || eventTime.after(start)) && (end == null || eventTime.before(end));
+        } catch (ParseException e) {
+            log.warn("❌ 날짜 변환 오류: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * ✅ [도움 메서드] 국내산 여부 판별
+     */
+    private boolean isDomesticProduct(String epcCode) {
+        return epcCode != null && epcCode.startsWith("001.880");
+    }
+}

@@ -1,33 +1,36 @@
-// ✅ CSV 파일을 읽어 데이터를 저장하는 서비스 클래스
 package com.newmeta.service;
 
-import java.io.BufferedReader; // CSV 파일을 읽기 위한 BufferedReader 임포트
-import java.io.FileReader; // 파일을 읽기 위한 FileReader 임포트
-import java.io.IOException; // 파일 입출력 예외 처리
-import java.text.ParseException; // 날짜 변환 시 발생하는 예외 처리
-import java.text.SimpleDateFormat; // 날짜 포맷 변환을 위한 클래스
-import java.util.Date; // 날짜 데이터를 처리하기 위한 Date 클래스
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
-import org.springframework.stereotype.Service; // Spring Service 컴포넌트로 등록하기 위한 어노테이션
-import org.springframework.transaction.annotation.Transactional; // 트랜잭션 관리를 위한 어노테이션
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.newmeta.domain.Dummy; // 임시 데이터 객체
-import com.newmeta.domain.Event; // 이벤트 도메인 클래스
-import com.newmeta.domain.Hub; // 허브 도메인 클래스
-import com.newmeta.domain.Product; // 제품 도메인 클래스
-import com.newmeta.domain.ProductEventLog; // 제품 이벤트 로그 도메인 클래스
-import com.newmeta.persistence.EventRepository; // 이벤트 저장소 인터페이스
-import com.newmeta.persistence.HubRepository; // 허브 저장소 인터페이스
-import com.newmeta.persistence.ProductEventLogRepository; // 제품 이벤트 로그 저장소 인터페이스
-import com.newmeta.persistence.ProductRepository; // 제품 저장소 인터페이스
+import com.newmeta.domain.Event;
+import com.newmeta.domain.Hub;
+import com.newmeta.domain.Product;
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.persistence.EventRepository;
+import com.newmeta.persistence.HubRepository;
+import com.newmeta.persistence.ProductEventLogRepository;
+import com.newmeta.persistence.ProductRepository;
 
-import lombok.RequiredArgsConstructor; // final 필드에 대한 생성자를 자동 생성하는 Lombok 어노테이션
-import lombok.extern.slf4j.Slf4j; // 로깅을 위한 Lombok 어노테이션
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-// ✅ Spring Service 컴포넌트 등록
+/**
+ * 📌 CSV 파일을 읽어 데이터를 저장하고, 이상 탐지를 수행하는 서비스 (Batch 10개씩 처리)
+ */
 @Service
-@RequiredArgsConstructor  // ✅ Lombok을 사용하여 final 필드에 대한 생성자 자동 생성
-@Slf4j  // ✅ 로그를 남기기 위한 Lombok 어노테이션
+@RequiredArgsConstructor
+@Slf4j
 public class CsvReaderService {
 
     // ✅ JPA Repository 주입
@@ -35,13 +38,16 @@ public class CsvReaderService {
     private final HubRepository hubRepository;
     private final EventRepository eventRepository;
     private final ProductEventLogRepository productEventLogRepository;
-    private final AnomalyDetectionService anomalyDetectionService; // 이상 탐지 서비스
+    private final AnomalyDetectionService anomalyDetectionService;
 
-    // ✅ 날짜 포맷 설정 (CSV에서 읽은 날짜를 변환할 때 사용)
+    // ✅ 날짜 포맷 설정 (CSV에서 읽은 날짜 변환)
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    // ✅ CSV 파일 경로 (Windows 기준)
-    private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\test/test_product_event_log_v12(test).csv";
+    // ✅ CSV 파일 경로
+    private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\test/이상치추가.csv";
+
+    // ✅ 한 번에 처리할 줄 개수 (Batch 크기)
+    private static final int batchSize = 30;
 
     // ✅ 현재 읽고 있는 줄 번호
     private int currentLine = 0;
@@ -49,35 +55,44 @@ public class CsvReaderService {
     // ✅ 모든 데이터 처리가 끝난 후, 종료 메시지를 한 번만 출력하기 위한 플래그
     private boolean isEndMessagePrinted = false;
 
-
     /**
-     * 🚀 10초마다 한 줄씩 CSV 파일을 처리하는 메서드
+     * 🚀 1초마다 CSV 파일을 10줄씩 처리하는 스케줄러
      */
+    //@Scheduled(fixedRate = 1000) // ✅ 1초마다 실행
     @Transactional
-    public void processCsvLine() {
-    	boolean isFileEnd = true; // ✅ 파일 끝까지 읽었는지 여부 체크
-    	
-        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) { // ✅ CSV 파일 읽기
+    public void processCsvLinesBatch() {
+        boolean isFileEnd = true; // ✅ 파일이 끝까지 읽혔는지 확인
+        List<String> batchLines = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
             int lineNumber = 0;
 
             // ✅ 첫 번째 줄(헤더) 건너뛰기
             reader.readLine();
 
-            // ✅ 파일에서 한 줄씩 읽기
+            // ✅ 파일에서 10줄씩 읽기
             while ((line = reader.readLine()) != null) {
-                if (lineNumber == currentLine) { // ✅ 현재 읽어야 하는 줄 번호인지 확인
-                    processRow(line); // ✅ 한 줄을 처리하는 메서드 호출
-                    currentLine++; // ✅ 다음 번 실행 시 다음 줄을 읽도록 설정
-                    break; // ✅ 한 줄만 처리하고 종료
+                if (lineNumber >= currentLine && lineNumber < currentLine + batchSize) {
+                    batchLines.add(line);
+                    isFileEnd = false; // ✅ 파일 끝이 아님을 표시
                 }
                 lineNumber++;
+                if (batchLines.size() == batchSize) {
+                    break; // ✅ 10줄을 다 읽으면 처리 시작
+                }
             }
 
-         // ✅ 파일 끝까지 읽었을 경우 로그를 한 번만 출력하고 종료
+            // ✅ 읽은 10줄 처리
+            if (!batchLines.isEmpty()) {
+                processRows(batchLines);
+                currentLine += batchLines.size(); // ✅ 다음 줄부터 읽도록 설정
+            }
+
+            // ✅ 파일 끝까지 읽었을 경우 로그 출력 후 종료
             if (isFileEnd) {
-                if (!isEndMessagePrinted) { // ✅ 메시지가 이미 출력되지 않았다면
-                    log.info("✅ 데이터 파싱 완료: 모든 CSV 데이터를 처리했습니다.");
+                if (!isEndMessagePrinted) {
+                    log.info("✅ 모든 CSV 데이터를 처리했습니다. 스케줄러 중지.");
                     isEndMessagePrinted = true; // ✅ 이후에는 출력되지 않도록 플래그 변경
                 }
                 return; // 🚀 메서드 종료
@@ -88,69 +103,80 @@ public class CsvReaderService {
     }
 
     /**
-     * 🚀 CSV에서 한 줄씩 데이터를 읽어 처리하는 메서드
+     * 🚀 CSV에서 여러 줄을 읽어 처리하는 메서드 (Batch)
      */
-    private void processRow(String line) {
-        // ✅ CSV 파일에서 읽은 데이터를 쉼표(,)로 분할
-        String[] data = line.split(",");
+    private void processRows(List<String> lines) {
+        List<ProductEventLog> eventLogs = new ArrayList<>();
 
-        // ✅ 데이터 필드 개수 검증 (7개 미만이면 무효한 데이터)
-        if (data.length < 7) {
-            log.warn("❌ Invalid row (필드 개수 부족): {}", line);
-            return;
+        for (String line : lines) {
+            // ✅ CSV 파일에서 데이터를 쉼표(,)로 분할
+            String[] data = line.split(",");
+
+            // ✅ 데이터 필드 개수 검증 (필드 개수가 부족하면 무효한 데이터)
+            if (data.length < 8) {
+                log.warn("❌ Invalid row (필드 개수 부족): {}", line);
+                continue;
+            }
+
+            try {
+                // ✅ CSV 데이터 파싱
+                String epcCode = data[0].trim(); // ✅ EPC 코드
+                if (epcCode.isEmpty()) {
+                    log.warn("❌ EPC 코드가 누락됨: {}", line);
+                    continue;
+                }
+
+                String productName = data[2].trim();
+                String hubType = data[3].trim();
+                String eventType = data[4].trim();
+                Date eventTime = parseDate(data[5].trim());
+
+                // ✅ 좌표 값 파싱 (유효 범위 검사 포함)
+                final Double latitude = parseDouble(data[6].trim(), -90, 90, "latitude");
+                final Double longitude = parseDouble(data[7].trim(), -180, 180, "longitude");
+
+                // ✅ 기본값 설정 (null 방지)
+                final Double safeLatitude = (latitude == null) ? 0.0 : latitude;
+                final Double safeLongitude = (longitude == null) ? 0.0 : longitude;
+
+                // ✅ Product 엔터티 저장 또는 재사용
+                Product product = productRepository.findByEpcCode(epcCode)
+                        .orElseGet(() -> productRepository.save(new Product(epcCode, productName)));
+
+                // ✅ Hub 엔터티 저장 또는 재사용
+                Hub hub = hubRepository.findByHubNameAndLatitudeAndLongitude(hubType, safeLatitude, safeLongitude)
+                        .orElseGet(() -> hubRepository.save(new Hub(null, hubType, safeLatitude, safeLongitude)));
+
+                // ✅ Event 엔터티 저장 또는 재사용
+                Event event = eventRepository.findByEventType(eventType)
+                        .orElseGet(() -> eventRepository.save(new Event(null, eventType)));
+
+                // ✅ ProductEventLog 저장 (Batch Insert를 위해 리스트에 추가)
+                ProductEventLog eventLog = ProductEventLog.builder()
+                        .product(product)
+                        .hub(hub)
+                        .event(event)
+                        .eventTime(eventTime)
+                        .build();
+                eventLogs.add(eventLog);
+
+                // ✅ 이상 탐지 수행
+                anomalyDetectionService.processEvent(eventLog);
+
+            } catch (Exception e) {
+                log.error("❌ Error processing row: {}, Error: {}", line, e.getMessage());
+            }
         }
 
-        try {
-            // ✅ CSV 데이터 파싱
-            String epcCode = data[0].trim(); // ✅ 제품 코드
-            Long productSerial = Long.parseLong(data[1].trim()); // ✅ 제품 시리얼 번호 변환
-            String productName = data[2].trim(); // ✅ 제품명
-            String hubType = data[3].trim(); // ✅ 허브 유형
-            String eventType = data[4].trim(); // ✅ 이벤트 유형
-            Date eventTime = parseDate(data[5].trim()); // ✅ 이벤트 발생 시간
-
-            // ✅ 좌표 값 파싱 (유효 범위 검사 포함)
-            final Double latitude = parseDouble(data[6].trim(), -90, 90, "latitude");
-            final Double longitude = parseDouble(data[7].trim(), -180, 180, "longitude");
-
-            // ✅ 기본값 설정 (null 방지)
-            final Double safeLatitude = (latitude == null) ? 0.0 : latitude;
-            final Double safeLongitude = (longitude == null) ? 0.0 : longitude;
-
-            // ✅ Product 엔터티 저장 또는 재사용
-            Product product = productRepository.findByEpcCode(epcCode)
-                    .orElseGet(() -> productRepository.save(new Product(epcCode, productName)));
-
-            // ✅ Hub 엔터티 저장 또는 재사용 (허브명 + 좌표 조합)
-            Hub hub = hubRepository.findByHubNameAndLatitudeAndLongitude(hubType, safeLatitude, safeLongitude)
-                    .orElseGet(() -> hubRepository.save(new Hub(null, hubType, safeLatitude, safeLongitude)));
-
-            // ✅ Event 엔터티 저장 또는 재사용 (이벤트 유형)
-            Event event = eventRepository.findByEventType(eventType)
-                    .orElseGet(() -> eventRepository.save(new Event(null, eventType)));
-
-            // ✅ ProductEventLog 저장
-            ProductEventLog eventLog = ProductEventLog.builder()
-                    .product(product)
-                    .hub(hub)
-                    .event(event)
-                    .eventTime(eventTime)
-                    .build();
-            productEventLogRepository.save(eventLog);
-
-            // ✅ 이상 탐지 수행
-            anomalyDetectionService.detectAnomalies(
-                    new Dummy(epcCode, productSerial, productName, hubType, eventType, eventTime, safeLatitude, safeLongitude), eventLog);
-
-            log.info("✅ 처리 완료: {}", line);
-
-        } catch (Exception e) {
-            log.error("❌ Error processing row: {}, Error: {}", line, e.getMessage());
+        // ✅ Batch Insert 실행 (한 번에 10개의 ProductEventLog 저장)
+        if (!eventLogs.isEmpty()) {
+            productEventLogRepository.saveAll(eventLogs);
+            log.info("✅ {}개의 데이터를 Batch Insert 완료", eventLogs.size());
         }
     }
 
     /**
-     * ✅ 날짜 문자열을 Date 타입으로 변환
+     * ✅ 날짜 문자열을 Date 타입으로 변환 (초가 없는 경우 자동 보정)
      */
     private Date parseDate(String dateStr) {
         try {
@@ -158,22 +184,18 @@ public class CsvReaderService {
                 return null;
             }
 
-            // ✅ 한 자리 시간(`H:mm`)을 두 자리(`HH:mm:ss`)로 변환
-            if (dateStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{1}:\\d{2}")) {
-                dateStr = dateStr.replaceFirst(" (\\d{1}):", " 0$1:"); // `9:00` → `09:00`
-            }
-
             // ✅ 초 단위가 없는 경우 추가 (`yyyy-MM-dd HH:mm` → `yyyy-MM-dd HH:mm:ss`)
-            if (dateStr.length() == 16) {
-                dateStr = dateStr + ":00";
+            if (dateStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{1,2}:\\d{2}")) {
+                dateStr = dateStr + ":00"; // ✅ 초(`:ss`)를 자동 추가
             }
 
             return dateFormat.parse(dateStr);
         } catch (ParseException e) {
-            log.warn("❌ Invalid date format after normalization: {}", dateStr);
+            log.warn("❌ Invalid date format (날짜 변환 실패): {}", dateStr);
             return null;
         }
     }
+
 
     /**
      * ✅ 문자열을 Double 타입으로 변환 (범위 검사 포함)

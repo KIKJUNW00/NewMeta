@@ -2,6 +2,7 @@ package com.newmeta.service; // 서비스 클래스가 속한 패키지를 선�
 
 import com.fasterxml.jackson.databind.ObjectMapper; // JSON 직렬화 및 역직렬화를 위한 ObjectMapper 임포트
 import com.newmeta.domain.dto.AnomalyDTO;
+import com.newmeta.domain.dto.ProductEventLogDTO;
 
 import lombok.RequiredArgsConstructor; // Lombok의 필수 생성자 자동 생성 어노테이션
 import lombok.extern.slf4j.Slf4j; // 로깅을 위한 Lombok 어노테이션
@@ -57,6 +58,19 @@ public class WebSocketService {
         log.info("📡 WebSocket 메시지 수신: {}", message.getPayload());
         session.sendMessage(new TextMessage("서버 응답: " + message.getPayload()));
     }
+    
+    /**
+     * 🚀 [최신 제품 이벤트 로그 WebSocket 전송]
+     */
+    public void sendLatestProductEventLog(String epcCode, ProductEventLogDTO eventLogDTO) {
+        try {
+            messagingTemplate.convertAndSend("/topic/latestEvent/" + epcCode, eventLogDTO);
+            log.info("📡 WebSocket - 최신 제품 이벤트 로그 전송 완료: epcCode={}, data={}", epcCode, eventLogDTO);
+        } catch (Exception e) {
+            log.error("❌ WebSocket 전송 오류 (최신 이벤트 로그)", e);
+        }
+    }
+
 
     /**
      * 📡 WebSocket을 통해 실시간 데이터 전송 (SCM 데이터 리스트를 JSON 형식으로 변환 후 전송)

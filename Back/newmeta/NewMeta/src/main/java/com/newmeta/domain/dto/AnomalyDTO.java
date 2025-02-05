@@ -1,59 +1,30 @@
-package com.newmeta.domain.dto; // 해당 DTO 클래스가 속한 패키지를 선언
+package com.newmeta.domain.dto;
 
-import java.util.Date; // 날짜 및 시간을 표현하기 위해 Java의 Date 클래스를 임포트
-import lombok.AllArgsConstructor; // 모든 필드를 포함하는 생성자를 자동으로 생성하는 Lombok 어노테이션
+import java.util.Date;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data; // Getter, Setter, toString, equals, hashCode 메서드를 자동 생성하는 Lombok 어노테이션
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * AnomalyDTO 클래스는 이상 감지 데이터를 저장하고 전송하는 DTO
- * 클라이언트와 서버 간 이상 이벤트 데이터를 주고받는 데 사용됨
+ * 📌 AnomalyDTO 클래스
+ * ✅ 이상 탐지 데이터를 저장하고 전송하는 DTO
  */
 @Builder
 @NoArgsConstructor
-@Data // 클래스 내 모든 필드에 대해 Getter, Setter, toString(), equals(), hashCode() 등을 자동 생성
-@AllArgsConstructor // 모든 필드를 포함하는 생성자를 자동으로 생성
+@Data
+@AllArgsConstructor  // ✅ 이미 모든 필드를 포함한 생성자를 자동으로 생성함 (중복 생성자 필요 없음)
 public class AnomalyDTO {
 
+    private Long anomalyId;
+    private String anomalyType;
+    private String reason;
+    private String epcCode;
+    private String anomalyProductName;
+    private String anomalyEventType;
+    private String anomalyHub;
+    private Double latitude;
+    private Double longitude;
+    private Date anomalyTimestamp;
 
-    private String anomalyType; // 이상 감지 유형 (예: 온도 이상, 위치 오류 등)
-
-    private String reason; // 이상 감지가 발생한 이유 (예: 센서 오류, 예상 경로 이탈 등)
-
-    private String epcCode; // EPC(Electronic Product Code), 제품의 고유 식별 코드
-
-    private String anomalyProductName; // 제품의 이름을 저장하는 필드
-
-    private String anomalyEventType; // 이벤트의 유형 (예: 입고, 출고, 이동 등)
-
-    private String anomalyHub; // 이벤트가 발생한 허브(물류센터)의 이름
-
-    private Double latitude; // 이벤트가 발생한 위치의 위도 정보
-
-    private Double longitude; // 이벤트가 발생한 위치의 경도 정보
-
-    private Date anomalyTimestamp; // 기존 anomalyTimestamp에서 eventTime으로 변경하여 사용
-
-	private Long anomalyId;
-
-	//private String productName;
-
-	//private String eventType;
-    
- // JPQL에서 사용될 생성자 (필드 순서에 주의)
-    public AnomalyDTO(Long anomalyId, String anomalyType, String reason,
-                      String epcCode, String productName, String eventType,
-                      String hubName, Double latitude, Double longitude, Date anomalyTimestamp) {
-        this.anomalyId = anomalyId;
-        this.anomalyType = anomalyType;
-        this.reason = reason;
-        this.epcCode = epcCode;
-        this.anomalyProductName = productName;
-        this.anomalyType = eventType;
-        this.anomalyHub = hubName;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.anomalyTimestamp = anomalyTimestamp;
-    }
 }

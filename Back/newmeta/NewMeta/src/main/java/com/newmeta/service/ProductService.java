@@ -23,17 +23,6 @@ import lombok.extern.slf4j.Slf4j; // 로깅을 위한 Lombok 어노테이션
 public class ProductService {
 
     private final ProductRepository productRepo; // 제품 정보를 관리하는 JPA 저장소
-    private final ProductEventLogRepository productEventLogRep; // 제품 이벤트 로그 저장소
-
-    /**
-     * 🚀 특정 제품의 이동 경로 조회 (SCM 과정별 데이터 반환)
-     * @param epcCode EPC 코드 (제품 고유 식별자)
-     * @return 제품 이동 경로 목록
-     */
-    public List<ProductEventLog> getProductEvents(String epcCode) {
-        log.info("📡 제품 이동 경로 조회 요청: epcCode={}", epcCode);
-        return productEventLogRep.findByProductEpcCode(epcCode);
-    }
 
     /**
      * 🚀 모든 제품 조회

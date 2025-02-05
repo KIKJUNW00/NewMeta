@@ -34,4 +34,14 @@ public class ProductEventLogDTO {
     private Double longitude; // 이벤트가 발생한 위치의 경도 정보
 
     private boolean anomaly; // 이벤트가 정상적인지 여부를 나타내는 필드 (이상 탐지 여부)
+    
+    // ✅ 오류 해결: DTO 생성자 추가
+    public ProductEventLogDTO(String epcCode, String eventType, String hubName, Date eventTime, Double latitude, Double longitude) {
+        this.epcCode = epcCode;
+        this.eventType = eventType;
+        this.hubName = hubName;
+        this.eventTime = eventTime;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
 }

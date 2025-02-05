@@ -3,6 +3,7 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="true"/>
 	<list key="searchhistory">
+		<item value="@Transactional"/>
 		<item value="anomalyLogRepository"/>
 		<item value="latitude"/>
 		<item value="findByEpcCode"/>

@@ -1,0 +1,5 @@
+package com.newmeta.utill;
+
+public class EventHistoryCache {
+
+}

@@ -1,33 +1,42 @@
-package com.newmeta.controller; // 해당 컨트롤러 클래스가 속한 패키지를 선언
+package com.newmeta.controller;
 
-import com.newmeta.domain.dto.AnomalyDTO;
-import com.newmeta.service.SCMDataService; // SCM 데이터 서비스 클래스 임포트
-import com.newmeta.service.WebSocketService; // WebSocket 서비스 클래스 임포트
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
-import lombok.RequiredArgsConstructor; // final 필드에 대한 생성자를 Lombok이 자동 생성
-import lombok.extern.slf4j.Slf4j; // 로깅을 위한 Lombok 어노테이션
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import org.springframework.http.ResponseEntity; // HTTP 응답을 처리하기 위한 ResponseEntity 임포트
-import org.springframework.web.bind.annotation.*; // Spring Web 관련 어노테이션 임포트
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.domain.dto.ProductEventLogDTO;
+import com.newmeta.persistence.ProductEventLogRepository;
+import com.newmeta.service.SCMDataService;
+import com.newmeta.service.WebSocketService;
 
-import java.util.HashMap;
-import java.util.List; // 리스트 데이터를 다루기 위한 라이브러리
-import java.util.Map; // 키-값 형태의 데이터를 다루기 위한 Map 클래스
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 📡 SCM 관련 데이터를 제공하는 컨트롤러
  * ✅ 실시간 물류 데이터 및 이상 탐지 정보를 제공
  */
-@Slf4j // 로깅 기능 자동 추가
-@RestController // RESTful API 컨트롤러로 등록
-@RequestMapping("/scm") // 모든 API 엔드포인트가 `/scm`으로 시작하도록 설정
-@RequiredArgsConstructor // final 필드에 대한 생성자를 Lombok이 자동 생성
+@Slf4j
+@RestController
+@RequestMapping("/scm")
+@RequiredArgsConstructor
 public class SCMController {
 
-    private final SCMDataService scmDataService; // SCM 데이터 관리 서비스
-    private final WebSocketService webSocketService; // 실시간 WebSocket 알림 서비스
+    private final SCMDataService scmDataService;
+    private final WebSocketService webSocketService;
+    private final ProductEventLogRepository productEventLogRepository; // ✅ 의존성 주입
 
+    
+    
     /**
      * 🚀 [SCM 데이터 조회] - 필터링 추가
      */
@@ -43,36 +52,102 @@ public class SCMController {
     }
 
     /**
-     * 🚀 [이상 탐지 데이터 조회] - 필터링 추가
-//     */
-    @GetMapping("/anomalies")
-    public ResponseEntity<List<Map<String, Object>>> getAnomalyData(
-            @RequestParam(required = false) String epcCode,
-            @RequestParam(required = false) String hubName,
-            @RequestParam(required = false) String productName,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
+     * 🚀 [제품 상세 이동 경로 조회 API] 
+     */
+    @GetMapping("/product-movement/{epcCode}")
+    public ResponseEntity<List<ProductEventLogDTO>> getProductMovement(@PathVariable String epcCode) {
+        log.info("📡 제품 이동 경로 조회 요청: epcCode={}", epcCode);
 
-        // ✅ AnomalyDTO 리스트 가져오기
-        List<AnomalyDTO> anomalyList = scmDataService.getFilteredAnomalyData(epcCode, hubName, productName, startDate, endDate);
+        List<ProductEventLogDTO> movementList = scmDataService.getProductMovement(epcCode);
+        if (movementList.isEmpty()) {
+            log.warn("⚠️ 제품 이동 경로 없음: epcCode={}", epcCode);
+            return ResponseEntity.noContent().build();
+        }
 
-        // ✅ AnomalyDTO → Map<String, Object> 변환
-        List<Map<String, Object>> anomalyDataList = anomalyList.stream().map(anomaly -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("anomalyType", anomaly.getAnomalyType());
-            map.put("reason", anomaly.getReason());
-            map.put("epcCode", anomaly.getEpcCode());
-            map.put("anomalyTimestamp", anomaly.getAnomalyTimestamp());
-            map.put("anomalyEventType", anomaly.getAnomalyEventType());
-            map.put("anomalyHub", anomaly.getAnomalyHub());
-            map.put("anomalyProductName", anomaly.getAnomalyProductName());
-            map.put("latitude", anomaly.getLatitude());
-            map.put("longitude", anomaly.getLongitude());
-            return map;
-        }).collect(Collectors.toList());
+        return ResponseEntity.ok(movementList);
+    }
 
-        // ✅ 변환된 데이터를 ResponseEntity로 반환
-        return ResponseEntity.ok(anomalyDataList);
+    /**
+     * 🚀 [특정 EPC 코드 이동 경로 추적 API]
+     */
+    @GetMapping("/tracking/{epcCode}")
+    public ResponseEntity<List<ProductEventLogDTO>> trackProductMovement(@PathVariable String epcCode) {
+        log.info("📡 특정 EPC 코드 이동 경로 조회: {}", epcCode);
+        List<ProductEventLogDTO> movementLogs = scmDataService.trackProductMovement(epcCode);
+        return ResponseEntity.ok(movementLogs);
+    }
+    
+//    **
+//    * 🚀 [이상 탐지 데이터 조회 API]
+//    */
+   @GetMapping("/anomalies")
+   public ResponseEntity<List<ProductEventLogDTO>> getAnomalies() {
+       log.info("📡 이상 탐지 데이터 조회 요청");
+       
+       List<ProductEventLogDTO> anomalies = scmDataService.getAnomalyData(); // ✅ 서비스에서 데이터 가져오기
+
+       if (anomalies.isEmpty()) {
+           log.warn("⚠️ 이상 탐지 데이터 없음");
+           return ResponseEntity.noContent().build();
+       }
+
+       return ResponseEntity.ok(anomalies);
+   }
+
+    /**
+     * 🚀 [HUB별 물류량 조회 API]
+     */
+    @GetMapping("/hub-statistics")
+    public ResponseEntity<Map<String, Long>> getHubStatistics() {
+        log.info("📡 허브별 물류량 조회 요청");
+        return ResponseEntity.ok(scmDataService.getHubStatistics());
+    }
+
+    /**
+     * 🚀 [날짜별 이상 탐지 발생 통계 API]
+     */
+    @GetMapping("/anomaly-daily-statistics")
+    public ResponseEntity<Map<String, Long>> getAnomalyDailyStatistics() {
+        log.info("📡 날짜별 이상 탐지 발생 통계 조회 요청");
+        return ResponseEntity.ok(scmDataService.getAnomalyDailyStatistics());
+    }
+
+    /**
+     * 🚀 [이상 탐지 원인 분석 API]
+     */
+    @GetMapping("/anomaly-type-statistics")
+    public ResponseEntity<Map<String, Long>> getAnomalyTypeStatistics() {
+        log.info("📡 이상 탐지 원인 분석 요청");
+        return ResponseEntity.ok(scmDataService.getAnomalyTypeStatistics());
+    }
+
+    /**
+     * 🚀 [최신 제품 이벤트 로그 조회]
+     */
+    @GetMapping("/latest-event/{epcCode}")
+    public ResponseEntity<ProductEventLogDTO> getLatestProductEventLog(@PathVariable String epcCode) {
+        log.info("📡 최신 이벤트 로그 조회 요청: epcCode={}", epcCode);
+
+        return productEventLogRepository.findByProductEpcCode(epcCode).stream() // ✅ 인스턴스 객체에서 메서드 호출
+                .max(Comparator.comparing(ProductEventLog::getEventTime))
+                .map(this::convertProductEventLogToDTO)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+    
+    /**
+     * ✅ [ProductEventLog → DTO 변환 메서드]
+     */
+    private ProductEventLogDTO convertProductEventLogToDTO(ProductEventLog log) {
+        return ProductEventLogDTO.builder()
+                .epcCode(log.getProduct().getEpcCode())
+                .productName(log.getProduct().getProductName())
+                .eventType(log.getEvent().getEventType())
+                .hubName(log.getHub().getHubName())
+                .eventTime(log.getEventTime())
+                .latitude(log.getHub().getLatitude())
+                .longitude(log.getHub().getLongitude())
+                .build();
     }
 
     /**
@@ -91,10 +166,7 @@ public class SCMController {
     @PostMapping("/hub-wise-data/websocket")
     public ResponseEntity<Void> sendHubWiseDataToWebSocket() {
         log.info("📡 허브별 데이터 WebSocket 전송 요청");
-
-        // ✅ 허브별 데이터 WebSocket 전송
         scmDataService.sendHubWiseDataToWebSocket();
-
         log.info("✅ WebSocket - 허브별 데이터 전송 완료!");
         return ResponseEntity.ok().build();
     }
@@ -105,10 +177,7 @@ public class SCMController {
     @PostMapping("/data/websocket")
     public ResponseEntity<Void> sendSCMDataToWebSocket() {
         log.info("📡 SCM 데이터 WebSocket 전송 요청");
-
-        // ✅ 실시간 SCM 데이터 WebSocket 전송
         scmDataService.sendSCMDataToWebSocket();
-
         log.info("✅ WebSocket - SCM 데이터 전송 완료!");
         return ResponseEntity.ok().build();
     }
@@ -119,10 +188,7 @@ public class SCMController {
     @PostMapping("/anomalies/websocket")
     public ResponseEntity<Void> sendAnomalyDataToWebSocket() {
         log.info("📡 이상 탐지 데이터 WebSocket 전송 요청");
-
-        // ✅ 실시간 이상 탐지 데이터 WebSocket 전송
         scmDataService.sendAnomalyDataToWebSocket();
-
         log.info("✅ WebSocket - 이상 탐지 데이터 전송 완료!");
         return ResponseEntity.ok().build();
     }

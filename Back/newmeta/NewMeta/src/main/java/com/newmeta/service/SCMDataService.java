@@ -2,6 +2,7 @@ package com.newmeta.service;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -10,8 +11,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.newmeta.domain.AnomalyLog;
 import com.newmeta.domain.ProductEventLog;
 import com.newmeta.domain.dto.AnomalyDTO;
+import com.newmeta.domain.dto.ProductEventLogDTO;
 import com.newmeta.persistence.AnomalyLogRepository;
 import com.newmeta.persistence.ProductEventLogRepository;
 
@@ -28,9 +31,13 @@ public class SCMDataService {
 
     private final ProductEventLogRepository productEventLogRepository;
     private final AnomalyLogRepository anomalyLogRepository;
-    private final WebSocketService webSocketService; // ✅ WebSocketService 추가
+    private final WebSocketService webSocketService; 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    
+    
+    
+    
     /**
      * 🚀 특정 필터 조건을 적용하여 SCM 데이터를 조회
      */
@@ -71,9 +78,83 @@ public class SCMDataService {
     }
 
     /**
-     * 🚀 허브별 실시간 물류 데이터 반환
+     * 🚀 [이상 탐지 데이터 조회 메서드]
+     */
+    public List<ProductEventLogDTO> getAnomalyData() {  // ✅ 메서드 확인
+        log.info("📡 이상 탐지 데이터 불러오는 중...");
+        List<ProductEventLog> anomalyLogs = productEventLogRepository.findByIsAnomalyTrue();
+        return anomalyLogs.stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+    
+    /**
+     * 🚀 [특정 제품의 이동 경로 조회]
+     */
+    public List<ProductEventLogDTO> getProductMovement(String epcCode) {
+        log.info("📡 제품 이동 경로 조회 요청: epcCode={}", epcCode);
+
+        List<ProductEventLogDTO> movementList = productEventLogRepository.findByProductEpcCode(epcCode).stream()
+                .sorted(Comparator.comparing(ProductEventLog::getEventTime))
+                .map(this::convertProductEventLogToDTO)
+                .collect(Collectors.toList());
+
+        if (movementList.isEmpty()) {
+            log.warn("⚠️ 이동 경로 없음: epcCode={}", epcCode);
+        }
+
+        return movementList;
+    }
+
+    /**
+     * 🚀 [특정 EPC 코드의 이동 경로 추적]
+     */
+    public List<ProductEventLogDTO> trackProductMovement(String epcCode) {
+        log.info("📡 특정 EPC 코드 이동 경로 추적 요청: epcCode={}", epcCode);
+
+        List<ProductEventLogDTO> trackingLogs = productEventLogRepository.findByProductEpcCode(epcCode).stream()
+                .sorted(Comparator.comparing(ProductEventLog::getEventTime))
+                .map(this::convertProductEventLogToDTO)
+                .collect(Collectors.toList());
+
+        if (trackingLogs.isEmpty()) {
+            log.warn("⚠️ 이동 기록 없음: epcCode={}", epcCode);
+        }
+
+        return trackingLogs;
+    }
+
+    /**
+     * 🚀 [허브별 물류량 조회]
+     */
+    public Map<String, Long> getHubStatistics() {
+        log.info("📡 허브별 물류량 통계 조회 요청");
+
+        return productEventLogRepository.findAll().stream()
+                .collect(Collectors.groupingBy(
+                        log -> log.getHub().getHubName(),
+                        Collectors.counting()
+                ));
+    }
+
+//    /**
+//     * 🚀 [이상 탐지 데이터 조회]
+//     */
+//    public List<AnomalyDTO> getFilteredAnomalyData(String epcCode, String hubName, String productName, String startDate, String endDate) {
+//        log.info("📡 이상 탐지 데이터 조회 요청");
+//
+//        return anomalyLogRepository.findAll().stream()
+//                .filter(log -> (epcCode == null || log.getEpcCode().equals(epcCode)))
+//                .filter(log -> (hubName == null || log.getAnomalyHub().equals(hubName)))
+//                .filter(log -> (productName == null || log.getAnomalyProductName().equals(productName)))
+//                .filter(log -> isWithinDateRange(log.getAnomalyTimestamp(), startDate, endDate))
+//                .map(this::convertAnomalyLogToDTO)
+//                .collect(Collectors.toList());
+//    }
+    /**
+     * 🚀 [허브별 실시간 물류 데이터 반환] (getSCMData 오류 해결)
      */
     public Map<String, Object> getSCMData() {
+        log.info("📡 허브별 실시간 물류 데이터 조회 요청");
+
         List<ProductEventLog> logs = productEventLogRepository.findAll();
 
         Map<String, Object> hubWiseData = logs.stream()
@@ -85,92 +166,148 @@ public class SCMDataService {
                         )
                 ));
 
-        long domesticTotal = logs.stream().filter(log -> isDomesticProduct(log.getProduct().getEpcCode())).count();
-        long importedTotal = logs.stream().filter(log -> !isDomesticProduct(log.getProduct().getEpcCode())).count();
-        long anomalyTotal = anomalyLogRepository.count();
-
         return Map.of(
                 "hubWiseData", hubWiseData,
-                "domestic_total", domesticTotal,
-                "imported_total", importedTotal,
-                "anomaly_total", anomalyTotal
+                "domestic_total", countDomesticProducts(logs),
+                "imported_total", countImportedProducts(logs),
+                "anomaly_total", anomalyLogRepository.count()
         );
     }
 
     /**
-     * ✅ EPC 코드로 국내산 여부 판별 (복원됨)
+     * 🚀 [이상 탐지 원인 분석]
      */
-    private boolean isDomesticProduct(String epcCode) {
-        if (epcCode == null || epcCode.isEmpty()) return false;
-        String[] parts = epcCode.split("\\.");
-        return parts.length > 2 && parts[1].startsWith("880");
+    public Map<String, Long> getAnomalyTypeStatistics() {
+        log.info("📡 이상 탐지 원인 분석 요청");
+
+        return anomalyLogRepository.findAll().stream()
+                .collect(Collectors.groupingBy(AnomalyLog::getAnomalyType, Collectors.counting()));
     }
 
     /**
-     * ✅ 허브별 공정 데이터 그룹화
+     * 🚀 [날짜별 이상 탐지 발생 통계 조회]
      */
-    private Map<String, Object> groupByDomesticAndProcess(List<ProductEventLog> logs) {
-        Map<String, Long> domesticCounts = countByEventType(logs, true);
-        Map<String, Long> importCounts = countByEventType(logs, false);
-        Map<String, Long> anomalyCounts = countByAnomalies(logs);
-        List<String> productList = logs.stream().map(log -> log.getProduct().getProductName()).distinct().collect(Collectors.toList());
+    public Map<String, Long> getAnomalyDailyStatistics() {
+        log.info("📡 날짜별 이상 탐지 발생 통계 조회 요청");
 
-        return Map.of(
-                "domestic", domesticCounts,
-                "imported", importCounts,
-                "anomaly", anomalyCounts,
-                "products", productList
-        );
+        return anomalyLogRepository.findAll().stream()
+                .collect(Collectors.groupingBy(
+                        log -> dateFormat.format(log.getAnomalyTimestamp()).split(" ")[0],
+                        Collectors.counting()
+                ));
     }
 
     /**
-     * 🚀 [공정 이벤트별 제품 개수 카운트] (복원됨)
-     */
-    private Map<String, Long> countByEventType(List<ProductEventLog> logs, boolean isDomestic) {
-        return logs.stream()
-                .filter(log -> isDomestic == isDomesticProduct(log.getProduct().getEpcCode()))
-                .collect(Collectors.groupingBy(log -> log.getEvent().getEventType(), Collectors.counting()));
-    }
-
-    /**
-     * 🚀 [이상 탐지 개수 카운트] (복원됨)
-     */
-    private Map<String, Long> countByAnomalies(List<ProductEventLog> logs) {
-        return logs.stream()
-                .filter(ProductEventLog::getIsAnomaly)
-                .collect(Collectors.groupingBy(log -> log.getEvent().getEventType(), Collectors.counting()));
-    }
-
-    /**
-     * ✅ WebSocket을 통해 실시간 데이터 전송
+     * 🚀 [WebSocket을 통해 실시간 데이터 전송]
      */
     public void sendSCMDataToWebSocket() {
-        Map<String, Object> scmData = getSCMData();
-        webSocketService.sendRealTimeSCMData(scmData);
+        log.info("📡 SCM 데이터 WebSocket 전송 요청");
+        webSocketService.sendRealTimeSCMData(getSCMData());
     }
 
     public void sendAnomalyDataToWebSocket() {
-        List<AnomalyDTO> anomalyDataList = getFilteredAnomalyData(null, null, null, null,null);
-        webSocketService.sendAnomalyAlert(anomalyDataList); // ✅ DTO 전달
+        log.info("📡 이상 탐지 데이터 WebSocket 전송 요청");
+        webSocketService.sendAnomalyAlert(getFilteredAnomalyData(null, null, null, null, null));
     }
-
 
     public void sendHubWiseDataToWebSocket() {
-        Map<String, Object> hubWiseData = getSCMData();
-        webSocketService.sendHubWiseData(hubWiseData);
+        log.info("📡 허브별 데이터 WebSocket 전송 요청");
+        webSocketService.sendHubWiseData(getSCMData());
     }
-   
+    
     /**
-     * ✅ 날짜 범위 내 데이터인지 검사 (복원됨)
+     * ✅ [도움 메서드] 허브별 데이터 그룹화
+     */
+    private Map<String, Long> groupByDomesticAndProcess(List<ProductEventLog> logs) {
+        log.info("📊 허브별 데이터 그룹화 실행");
+
+        return logs.stream()
+                .collect(Collectors.groupingBy(log -> log.getEvent().getEventType(), Collectors.counting()));
+    }
+
+    /**
+     * ✅ [도움 메서드] 국내산 제품 개수 계산
+     */
+    private long countDomesticProducts(List<ProductEventLog> logs) {
+        log.info("📊 국내산 제품 개수 계산");
+
+        return logs.stream().filter(log -> isDomesticProduct(log.getProduct().getEpcCode())).count();
+    }
+
+    /**
+     * ✅ [도움 메서드] 수입산 제품 개수 계산
+     */
+    private long countImportedProducts(List<ProductEventLog> logs) {
+        log.info("📊 수입산 제품 개수 계산");
+
+        return logs.stream().filter(log -> !isDomesticProduct(log.getProduct().getEpcCode())).count();
+    }
+
+    /**
+     * ✅ [도움 메서드] ProductEventLog → DTO 변환
+     */
+    private ProductEventLogDTO convertProductEventLogToDTO(ProductEventLog log) {
+        return ProductEventLogDTO.builder()
+                .epcCode(log.getProduct().getEpcCode())
+                .productName(log.getProduct().getProductName())
+                .eventType(log.getEvent().getEventType())
+                .hubName(log.getHub().getHubName())
+                .eventTime(log.getEventTime())
+                .latitude(log.getHub().getLatitude())
+                .longitude(log.getHub().getLongitude())
+                .build();
+    }
+    
+    private ProductEventLogDTO convertToDTO(ProductEventLog log) { // ✅ 메서드 추가
+        return ProductEventLogDTO.builder()
+                .epcCode(log.getProduct().getEpcCode())
+                .productName(log.getProduct().getProductName())
+                .eventType(log.getEvent().getEventType())
+                .hubName(log.getHub().getHubName())
+                .eventTime(log.getEventTime())
+                .latitude(log.getHub().getLatitude())
+                .longitude(log.getHub().getLongitude())
+                .build();
+    }
+
+    /**
+     * ✅ [도움 메서드] AnomalyLog → DTO 변환
+     */
+    private AnomalyDTO convertAnomalyLogToDTO(AnomalyLog log) {
+        return AnomalyDTO.builder()
+                .anomalyId(log.getAnomalyId()) // 추가
+                .anomalyType(log.getAnomalyType())
+                .reason(log.getReason())
+                .epcCode(log.getEpcCode())
+                .anomalyProductName(log.getAnomalyProductName())
+                .anomalyEventType(log.getAnomalyEventType())
+                .anomalyHub(log.getAnomalyHub())
+                .latitude(log.getLatitude())
+                .longitude(log.getLongitude())
+                .anomalyTimestamp(log.getAnomalyTimestamp())
+                .build();
+    }
+    
+    
+
+    /**
+     * ✅ [도움 메서드] 날짜 범위 검사
      */
     private boolean isWithinDateRange(Date eventTime, String startDate, String endDate) {
-    	try {
-    	    Date start = (startDate != null && !startDate.isEmpty()) ? dateFormat.parse(startDate) : null;
-    	    Date end = (endDate != null && !endDate.isEmpty()) ? dateFormat.parse(endDate) : null;
-    	    return (start == null || eventTime.after(start)) && (end == null || eventTime.before(end));
-    	} catch (ParseException e) {
-    	    log.warn("❌ 날짜 변환 오류: {}", e.getMessage());
-    	    return false;
-    	}
+        try {
+            Date start = startDate != null ? dateFormat.parse(startDate) : null;
+            Date end = endDate != null ? dateFormat.parse(endDate) : null;
+            return (start == null || eventTime.after(start)) && (end == null || eventTime.before(end));
+        } catch (ParseException e) {
+            log.warn("❌ 날짜 변환 오류: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * ✅ [도움 메서드] 국내산 여부 판별
+     */
+    private boolean isDomesticProduct(String epcCode) {
+        return epcCode != null && epcCode.startsWith("001.880");
     }
 }

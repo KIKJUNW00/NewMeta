@@ -1,15 +1,22 @@
 package com.newmeta.controller; // 해당 컨트롤러 클래스가 속한 패키지를 선언
 
-import com.newmeta.domain.Hub; // 허브 엔티티 클래스 임포트
+import java.util.List; // 리스트 데이터를 다루기 위한 라이브러리
+
+import org.springframework.http.ResponseEntity; // HTTP 응답을 처리하기 위한 ResponseEntity 임포트
+// Spring Web 관련 어노테이션 임포트
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.newmeta.domain.Product; // 제품 엔티티 클래스 임포트
-import com.newmeta.domain.ProductEventLog; // 제품 이벤트 로그 엔티티 클래스 임포트
 import com.newmeta.service.ProductService; // 제품 서비스 클래스 임포트
 
 import lombok.RequiredArgsConstructor; // final 필드에 대한 생성자를 Lombok이 자동 생성
-import org.springframework.http.ResponseEntity; // HTTP 응답을 처리하기 위한 ResponseEntity 임포트
-import org.springframework.web.bind.annotation.*; // Spring Web 관련 어노테이션 임포트
-
-import java.util.List; // 리스트 데이터를 다루기 위한 라이브러리
 
 /**
  * 📌 제품 관리 컨트롤러
@@ -22,24 +29,6 @@ public class ProductController {
 
     private final ProductService productService; // 제품 데이터 관리 서비스
 
-    /**
-     * 🚀 특정 제품(EPC Code)의 이동 경로 및 SCM 과정 조회
-     * @param epcCode 조회할 제품의 EPC 코드
-     * @return 해당 제품의 이동 경로 (SCM 과정)
-     */
-    @GetMapping("/details/{epcCode}")
-    public ResponseEntity<List<ProductEventLog>> getProductDetails(@PathVariable String epcCode) {
-        List<ProductEventLog> events = productService.getProductEvents(epcCode);
-
-        // ✅ event.getHub()가 null이면 기본값 제공 (Hub 객체 수정됨)
-        events.forEach(event -> {
-            if (event.getHub() == null) {
-                event.setHub(new Hub("알 수 없음", 37.5665, 126.9780)); // 기본 위치: 서울 (임의 설정)
-            }
-        });
-
-        return ResponseEntity.ok(events);
-    }
 
     /**
      * 🚀 모든 제품 조회
