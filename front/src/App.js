@@ -1,7 +1,7 @@
 import { Route, Routes, BrowserRouter } from 'react-router-dom';
 import LoginPage from './Pages/LoginPages';
 import AdminPage from './Pages/AdminPage';
-import { AuthProvider, useAuth } from "./Util/AuthProvider";
+import { AuthProvider } from "./Util/DashBoardUtil/AuthProvider";
 
 
 

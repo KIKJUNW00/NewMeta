@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import mainLogo from '../img/mainLogo1.png';
 import reallogo from '../img/reallogo1.png';
-import { useAuth } from '../Util/AuthProvider'
+import { useAuth } from '../Util/DashBoardUtil/AuthProvider'
 
 export default function Login() {
 

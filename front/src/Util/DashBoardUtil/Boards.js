@@ -73,11 +73,11 @@ export function Board({ onProductClick }) {
                             <tr 
                                 key={product.epcCode} 
                                 className="cursor-pointer hover:bg-gray-100"
-                                onClick={() => {
-                                    console.log("클릭한 EPC 코드:", product.epcCode); // 디버깅
-                                    onProductClick(product.epcCode, productData); // EPC 코드 전달
-                                }}
-                                // onClick={() => onProductClick(product.epcCode)} // 클릭 시 epcCode 전달
+                                // onClick={() => {
+                                //     console.log("클릭한 EPC 코드:", product.epcCode); // 디버깅
+                                //     onProductClick(product.epcCode, productData); // EPC 코드 전달
+                                // }}
+                                onClick={() => onProductClick(product.epcCode)} // 클릭 시 epcCode 전달
                             >
                                 <td className="px-6 py-4 truncate">{index + 1}</td>
                                 <td className="px-6 py-4 truncate">{product.productName}</td>

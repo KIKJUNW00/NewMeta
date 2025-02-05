@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
-import logo1 from '../img/logo1.png';
-import logout from '../img/logout.png'
-import Clock from './Clock';
+import logo1 from '../../img/logo1.png';
+import logout from '../../img/logout.png';
+import Clock from '../DashBoardUtil/Clock';
 
 export default function Sidebar() {
 

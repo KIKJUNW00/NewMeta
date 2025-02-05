@@ -1,6 +1,6 @@
 import React from 'react';
-import { BoardSCM } from '../Util/Boards';
-import SCMarchi from '../Util/SCMarchi1';
+import { BoardSCM } from '../Util/DashBoardUtil/Boards';
+import SCMarchi from '../Util/DashBoardUtil/SCMarchi1';
 
 export default function SCM() {
   return (

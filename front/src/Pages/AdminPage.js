@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom';
-import Sidebar from '../Util/Sidebar';
+import Sidebar from '../Util/DashBoardUtil/Sidebar';
 import { Routes, Route } from 'react-router-dom';
 import DashBoard from '../Pages/DashBoard';
 import SCM from './SCM'
