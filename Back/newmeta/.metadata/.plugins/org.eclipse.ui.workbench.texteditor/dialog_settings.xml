@@ -3,6 +3,8 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="true"/>
 	<list key="searchhistory">
+		<item value="중복"/>
+		<item value="alreadyExists"/>
 		<item value="@Transactional"/>
 		<item value="anomalyLogRepository"/>
 		<item value="latitude"/>

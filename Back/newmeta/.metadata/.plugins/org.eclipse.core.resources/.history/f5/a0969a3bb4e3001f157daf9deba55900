@@ -1,0 +1,58 @@
+package com.newmeta.cache;
+import com.newmeta.domain.ProductEventLog;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.util.*;
+
+/**
+ * 🚀 EPC 별 이벤트 히스토리를 저장하는 캐시
+ */
+@Component
+@Slf4j
+public class EventHistoryCache {
+
+    // ✅ EPC 코드별 이벤트 리스트 저장 (임시 메모리 저장)
+    private final Map<String, List<ProductEventLog>> eventCache = new HashMap<>();
+
+    /**
+     * 🚀 이벤트 추가 (EPC 코드 기준으로 저장)
+     */
+    public synchronized void addEvent(ProductEventLog eventLog) {
+        if (eventLog == null || eventLog.getProduct() == null) {
+            log.warn("⚠️ 이벤트 추가 실패: 이벤트 또는 제품 정보가 NULL");
+            return;
+        }
+
+        String epcCode = eventLog.getProduct().getEpcCode();
+        eventCache.computeIfAbsent(epcCode, k -> new ArrayList<>()).add(eventLog);
+
+        log.info("✅ 이벤트 추가: EPC [{}], 이벤트 [{}]", epcCode, eventLog.getEvent().getEventType());
+    }
+
+    /**
+     * 🚀 특정 EPC 코드의 이벤트 목록 반환
+     */
+    public synchronized List<ProductEventLog> getEventsByEpc(String epcCode) {
+        return eventCache.getOrDefault(epcCode, Collections.emptyList());
+    }
+
+    /**
+     * 🚀 특정 EPC 코드의 이벤트 기록 제거 (SCM 프로세스 완료 후)
+     */
+    public synchronized void removeEventHistory(String epcCode) {
+        if (eventCache.containsKey(epcCode)) {
+            eventCache.remove(epcCode);
+            log.info("🗑 이벤트 기록 삭제: EPC [{}]", epcCode);
+        }
+    }
+
+    /**
+     * 🚀 전체 캐시 데이터 확인 (디버깅용)
+     */
+    public synchronized void printCacheStatus() {
+        log.info("📊 현재 저장된 EPC 이벤트 수: {}", eventCache.size());
+        eventCache.forEach((epc, events) -> 
+            log.info("📌 EPC [{}]: {} 개 이벤트 기록됨", epc, events.size()));
+    }
+}

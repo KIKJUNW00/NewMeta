@@ -39,10 +39,22 @@ public class AnomalyDetectionService {
         boolean isDomestic = isDomesticProduct(epcCode);
 
         log.info("✅ [EPC 코드 확인] EPC={} | isDomestic={}", epcCode, isDomestic);
+        
+        boolean alreadyExists = anomalyLogRepository.existsByEpcCode(epcCode);
+        if (alreadyExists) {
+            log.info("❗ EPC [{}] 이미 anomaly_log 등록됨, 중복 저장 생략", epcCode);
+            eventLog.setIsAnomaly(true);
+            productEventLogRepository.save(eventLog);
+        }
+        else {
+            // **이벤트 기본값을 정상(`false`)으로 설정**
+            eventLog.setIsAnomaly(false);
+            productEventLogRepository.save(eventLog);
+        }
 
-        // **이벤트 기본값을 정상(`false`)으로 설정**
-        eventLog.setIsAnomaly(false);
-        productEventLogRepository.save(eventLog);
+//        // **이벤트 기본값을 정상(`false`)으로 설정**
+//        eventLog.setIsAnomaly(false);
+//        productEventLogRepository.save(eventLog);
 
         // 이벤트 히스토리 저장
         eventHistoryCache.addEvent(eventLog);
