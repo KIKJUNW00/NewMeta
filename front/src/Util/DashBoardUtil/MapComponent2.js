@@ -20,6 +20,7 @@ export default function MapComponent2({ readPoints, selectedEpcCode }) {
 
       mapRef.current = map;
     }
+    
   }, []);
 
   useEffect(() => {
@@ -53,6 +54,8 @@ export default function MapComponent2({ readPoints, selectedEpcCode }) {
             uniquePoints.push(point);
         }
     });
+console.log("✅ 선택된 EPC 코드:", selectedEpcCode);
+console.log("✅ `readPoints` 내 데이터:", readPoints);
 
     // 이동 경로 추가 (파란색 선)
     const validPoints = uniquePoints.map(point => [point.latitude, point.longitude]);

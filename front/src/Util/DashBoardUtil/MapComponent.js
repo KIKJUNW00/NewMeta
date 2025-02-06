@@ -41,7 +41,6 @@ export default function HubWiseBubbleMap() {
     // ✅ 지역별 좌표 및 색상 매핑
     const hubDetails = {
       Seoul: { lat: 37.5665, lng: 126.9780, color: 'rgba(54, 162, 235, 0.5)', hoverColor: 'rgba(54, 162, 235, 1)' },
-      Incheon: { lat: 37.5, lng: 126.7052, color: 'rgba(75, 192, 75, 0.5)', hoverColor: 'rgba(75, 192, 75, 1)' },
       Busan: { lat: 35.1796, lng: 129.0756, color: 'rgba(255, 99, 132, 0.5)', hoverColor: 'rgba(255, 99, 132, 1)' },
       Gwangju: { lat: 35.1595, lng: 126.8526, color: 'rgba(255, 206, 86, 0.5)', hoverColor: 'rgba(255, 206, 86, 1)' },
       Yeongju: { lat: 36.8057, lng: 128.6241, color: 'rgba(153, 102, 255, 0.5)', hoverColor: 'rgba(153, 102, 255, 1)' },
@@ -68,11 +67,12 @@ export default function HubWiseBubbleMap() {
     Object.entries(hubData).forEach(([hub, details]) => {
       if (!hubDetails[hub]) return; // 정의되지 않은 허브는 무시
 
-      const totalProducts = Object.values(details?.domestic || {}).reduce((sum, val) => sum + val, 0);
+      // 각 허브의 모든 제품 수량을 합산
+      const totalProducts = Object.values(details).reduce((sum, val) => sum + val, 0);
       console.log(`📌 허브명: ${hub}, 총 제품 수량: ${totalProducts}`);
 
       const { lat, lng, color, hoverColor } = hubDetails[hub];
-      const scaleFactor = 7000; // 크기 조정 상수
+      const scaleFactor = 3000; // 크기 조정 상수를 낮춤
       const bubbleSize = Math.max(3000, Math.min(Math.sqrt(totalProducts) * scaleFactor, 60000));
 
       // ✅ 원형 버블 추가
@@ -89,7 +89,7 @@ export default function HubWiseBubbleMap() {
 
       // ✅ 마우스 이벤트 추가 (호버 효과)
       bubble.on('mouseover', function () {
-        this.setStyle({ color: hoverColor, fillColor: hoverColor, fillOpacity: 0.8 });
+        this.setStyle({ color: hoverColor, fillColor: hoverColor, fillOpacity: 0.5 });
         this.bindPopup(`<strong>${hub}</strong><br>총 제품 수량: ${totalProducts}`).openPopup();
       });
 

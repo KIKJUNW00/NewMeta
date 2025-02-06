@@ -12,22 +12,33 @@ export default function DashBoard() {
   const [eventLogData, setEventLogData] = useState([]);
 
   useEffect(() => {
-    const fetchEventLogData = async () => {
-      try {
-        const response = await fetch("http://10.125.121.228:8080/producteventLog/paged?page=0&size=30");
+  const fetchAllEventLogs = async () => {
+    try {
+      let allEvents = [];
+      let page = 0;
+      let totalPages = 1;
+
+      while (page < totalPages) {
+        const response = await fetch(`http://10.125.121.228:8080/producteventLog/paged?page=${page}&size=30`);
         const data = await response.json();
         if (data && Array.isArray(data.content)) {
-          setEventLogData(data.content);
+          allEvents = [...allEvents, ...data.content];
+          totalPages = data.totalPages;
+          page += 1;
         } else {
           console.error("API 데이터 형식 오류", data);
+          break;
         }
-      } catch (error) {
-        console.error("API 요청 오류:", error);
       }
-    };
+      setEventLogData(allEvents);
+    } catch (error) {
+      console.error("API 요청 오류:", error);
+    }
+  };
 
-    fetchEventLogData();
-  }, []);
+  fetchAllEventLogs();
+}, []);
+
 
   return (
     <div className="h-screen bg-gray-100 flex items-center justify-center">
@@ -36,7 +47,7 @@ export default function DashBoard() {
         {/* 윗 섹션 */}
         <div className="flex space-x-4 h-1/2">
 
-          {/* 윗쪽 왼쪽 섹션 국가별 지도 product 분포표 한국/중국 */}
+          {/* 윗쪽 왼쪽 섹션 HUB별 지도 product 분포표 */}
           <div className="flex w-[40%] h-full border-solid border border-black
                          bg-gray-50 p-4 shadow">
             <div className='w-full h-full flex flex-col'>
