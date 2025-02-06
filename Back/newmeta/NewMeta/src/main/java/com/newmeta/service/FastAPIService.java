@@ -80,6 +80,7 @@ public class FastAPIService {
 
         // ✅ 제품 정보 추가
         data.put("epc_code", events.get(0).getProduct().getEpcCode());
+//        data.put("product_serial", events.get(0).getProduct().getProductSerial());
         data.put("product_name", events.get(0).getProduct().getProductName());
 
         // ✅ 이벤트 히스토리를 FastAPI에서 처리할 JSON 형태로 변환

@@ -19,5 +19,6 @@ import lombok.Setter;
 public class Product {
 	@Id
 	private String epcCode; // EPC 코드
+//	private Long productSerial; // 제품 시리얼 번호 
 	private String productName; // 제품명
 }

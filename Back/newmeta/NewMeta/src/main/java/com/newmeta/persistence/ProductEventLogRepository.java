@@ -39,7 +39,7 @@ public interface ProductEventLogRepository extends JpaRepository<ProductEventLog
             "JOIN pel.product p " +
             "JOIN pel.event e " +
             "JOIN pel.hub h " +
-            "ORDER BY pel.productEventLogId ASC")
+            "ORDER BY pel.productEventLogId DESC")
     Page<ProductEventLogDTO> findPagedProductEventLogs(Pageable pageable);
 
     // ✅ 특정 EPC 코드 및 이벤트 타입 존재 여부 확인(AnomalyDetectionService:commissioning, Custom_inbound 검증)
@@ -56,4 +56,6 @@ public interface ProductEventLogRepository extends JpaRepository<ProductEventLog
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	long countByProductEpcCodeAndEventEventType(String epcCode, String string);
 }
