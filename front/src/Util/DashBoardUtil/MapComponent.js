@@ -72,7 +72,7 @@ export default function HubWiseBubbleMap() {
       console.log(`📌 허브명: ${hub}, 총 제품 수량: ${totalProducts}`);
 
       const { lat, lng, color, hoverColor } = hubDetails[hub];
-      const scaleFactor = 3000; // 크기 조정 상수를 낮춤
+      const scaleFactor = 1000; // 크기 조정 상수를 낮춤
       const bubbleSize = Math.max(3000, Math.min(Math.sqrt(totalProducts) * scaleFactor, 60000));
 
       // ✅ 원형 버블 추가

@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BoardSCM } from '../Util/SCMarchiUtil/SCMBoard';
-import SCMarchi from '../Util/DashBoardUtil/SCMarchi1';
+import SCMarchi from '../Util/SCMarchiUtil/SCMarchi1';
 
 export default function SCMDashboard() {
 
+  // 선택한 제품의 EPC 코드를 저장하는 상태
+  const [selectedEpcCode, setSelectedEpcCode] = useState(null);
+
+  // BoardSCM에서 제품을 클릭하면 호출되는 콜백
+  const handleProductClick = (epcCode) => {
+    setSelectedEpcCode(epcCode);
+  };
   return (
     <div className="h-screen bg-gray-100 p-4">
 
@@ -13,7 +20,7 @@ export default function SCMDashboard() {
           {/* 왼쪽 필터/제품 카테고리 영역 */}
           <div className="w-[35%] border border-gray-300 bg-gray-50 p-4 mr-4 rounded">
             <h2 className="text-lg font-bold text-gray-700 mb-2">Product Category</h2>
-            <BoardSCM />
+            <BoardSCM onProductClick={handleProductClick} />
           </div>
 
           {/* 오른쪽 메인 콘텐츠 영역 */}
@@ -22,7 +29,13 @@ export default function SCMDashboard() {
             <div className="flex flex-col flex-1 border border-gray-300 bg-gray-50 p-4 rounded">
               <h2 className="text-lg font-bold text-gray-700 mb-2">SCM 과정</h2>
               <div className="flex flex-col justify-center items-center flex-1">
-                <SCMarchi />
+                {selectedEpcCode ? (
+                  <SCMarchi epcCode={selectedEpcCode} />
+                ) : (
+                  <div className="flex-1 flex justify-center items-center">
+                    <p className="text-gray-500">제품을 선택하면 SCM 과정을 확인할 수 있습니다.</p>
+                  </div>
+                )}
               </div>
             </div>
 
