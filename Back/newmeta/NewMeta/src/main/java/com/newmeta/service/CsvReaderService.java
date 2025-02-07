@@ -1,17 +1,4 @@
-package com.newmeta.service; // 📌 해당 클래스가 서비스 레이어에 위치함을 나타냄
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+package com.newmeta.service;
 
 import com.newmeta.domain.Event;
 import com.newmeta.domain.Hub;
@@ -21,137 +8,139 @@ import com.newmeta.persistence.EventRepository;
 import com.newmeta.persistence.HubRepository;
 import com.newmeta.persistence.ProductEventLogRepository;
 import com.newmeta.persistence.ProductRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
- * 📌 **CSV 파일을 읽어 데이터를 저장하고 이상 탐지를 수행하는 서비스**
- * - **Batch(일괄처리) 방식**을 적용하여 한 번에 10개씩 데이터를 저장
- * - **DB 부하를 최소화하면서도 실시간 처리를 가능하게 구성**
+ * 📌 CSV 파일 Batch 처리 (스케줄링)
+ * - 일정 간격으로 CSV 파일에서 데이터를 읽어, DB에 저장 + AnomalyDetectionService 호출
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class CsvReaderService {
 
-    // ✅ **JPA Repository 의존성 주입** (데이터베이스 접근)
-    private final ProductRepository productRepository; // 제품 정보 저장소
-    private final HubRepository hubRepository; // 허브 정보 저장소
-    private final EventRepository eventRepository; // 이벤트 정보 저장소
-    private final ProductEventLogRepository productEventLogRepository; // 제품 이벤트 로그 저장소
-    private final AnomalyDetectionService anomalyDetectionService; // **이상 탐지 서비스** (AI 기반 분석 포함)
-    
+    private final ProductRepository productRepository;
+    private final HubRepository hubRepository;
+    private final EventRepository eventRepository;
+    private final ProductEventLogRepository productEventLogRepository;
+    private final AnomalyDetectionService anomalyDetectionService;
 
-    // ✅ **날짜 포맷 설정 (CSV에서 읽은 날짜 변환)**
+    // 날짜 포맷
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    // ✅ **CSV 파일 경로 (파일 위치)**
-    private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\test/더미데이터원본.csv";
+    // CSV 파일 경로 (예: 설정 파일에서 주입 가능)
+    private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\test/더미데이터이상치.csv";
 
-    // ✅ **Batch 크기 (한 번에 처리할 데이터 개수)**
-    private static final int batchSize = 10;
+    // Batch 크기
+    private static final int BATCH_SIZE = 100;
 
-    // ✅ **현재 읽고 있는 줄 번호 (다음 배치를 가져올 때 사용)**
+    // 현재 읽는 라인
     private int currentLine = 0;
 
-    // ✅ **CSV 파일을 끝까지 처리했는지 여부 플래그**
+    // 파일 끝까지 읽은 여부
     private boolean isEndMessagePrinted = false;
 
     /**
-     * 🚀 **CSV 데이터를 일정 간격으로 읽어 DB에 저장하는 스케줄러**
-     * - `@Scheduled(fixedRate = 1000)`: **1초마다 실행**
-     * - **CSV 파일을 읽어 한 번에 10개씩 데이터를 처리** (Batch 방식)
+     * 📌 1초마다 Batch 크기만큼 CSV 읽기
+     * - 개선사항(1): 파일이 매우 크면, 더 큰 batchSize + 주기 조정
+     * - 개선사항(2): 파일 변경 감지(WatchService)나 특정 이벤트 시점에만 실행 가능
      */
-//    @Scheduled(fixedRate = 1000) // ✅ 1초마다 실행
-    @Transactional // ✅ 트랜잭션 처리 (전체 실행 중 오류 발생 시 롤백)
+    @Scheduled(fixedRate = 1000)
+    @Transactional
     public void processCsvLinesBatch() {
-        boolean isFileEnd = true; // ✅ 파일이 끝까지 읽혔는지 확인
-        List<String> batchLines = new ArrayList<>(); // ✅ Batch 데이터 저장용 리스트
+        boolean isFileEnd = true;
+        List<String> batchLines = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
+            // 첫 줄(헤더) 건너뛰기
+            reader.readLine();
+
             String line;
             int lineNumber = 0;
 
-            // ✅ **첫 번째 줄 (헤더) 건너뛰기**
-            reader.readLine();
-
-            // ✅ **한 번에 batchSize(10개) 만큼 읽기**
             while ((line = reader.readLine()) != null) {
-                if (lineNumber >= currentLine && lineNumber < currentLine + batchSize) {
+                if (lineNumber >= currentLine && lineNumber < currentLine + BATCH_SIZE) {
                     batchLines.add(line);
-                    isFileEnd = false; // ✅ 파일 끝이 아님을 표시
+                    isFileEnd = false;
                 }
                 lineNumber++;
-                if (batchLines.size() == batchSize) {
-                    break; // ✅ 10개를 읽으면 처리 시작
+                if (batchLines.size() == BATCH_SIZE) {
+                    break;
                 }
             }
 
-            // ✅ **읽은 데이터 처리**
+            // Batch 처리
             if (!batchLines.isEmpty()) {
                 processRows(batchLines);
-                currentLine += batchLines.size(); // ✅ 다음 배치를 읽도록 설정
+                currentLine += batchLines.size();
             }
 
-            // ✅ **파일 끝까지 읽었을 경우 스케줄러 중지**
-            if (isFileEnd) {
-                if (!isEndMessagePrinted) {
-                    log.info("✅ 모든 CSV 데이터를 처리했습니다. 스케줄러 중지.");
-                    isEndMessagePrinted = true; // ✅ 이후에는 중복 실행 방지
-                }
+            // 파일 끝까지 읽음
+            if (isFileEnd && !isEndMessagePrinted) {
+                log.info("✅ 모든 CSV 데이터 처리 완료");
+                isEndMessagePrinted = true;
+                // 개선사항(3): @Scheduled 중지 or 다른 알림 로직
             }
+
         } catch (IOException e) {
-            log.error("❌ CSV 파일을 읽는 중 오류 발생: {}", e.getMessage());
+            log.error("❌ CSV 파일 읽기 오류: {}", e.getMessage());
         }
     }
 
     /**
-     * 🚀 **읽어온 CSV 데이터를 처리하는 메서드**
-     * - 한 번에 10개의 데이터를 파싱하여 DB에 저장
+     * 📌 batchLines를 실제 DB에 저장 + 이상 탐지 호출
      */
     private void processRows(List<String> lines) {
         List<ProductEventLog> eventLogs = new ArrayList<>();
 
-        for (String line : lines) {
-            String[] data = line.split(",");
+        for (String row : lines) {
+            String[] data = row.split(",");
 
-            if (data.length < 8) { // ✅ 필드 개수 검증
-                log.warn("❌ Invalid row (필드 개수 부족): {}", line);
+            // 기본 8개 필드 필요(epcCode, productSerial, productName, hubType, eventType, eventTime, lat, lng)
+            if (data.length < 8) {
+                log.warn("❌ 필드 부족: {}", row);
                 continue;
             }
 
             try {
-                // ✅ **CSV 데이터 파싱**
                 String epcCode = data[0].trim();
-                if (epcCode.isEmpty()) {
-                    log.warn("❌ EPC 코드가 누락됨: {}", line);
-                    continue;
-                }
-//                Long productSerial = data[1].trim();
+                Long productSerial = parseLong(data[1].trim());
                 String productName = data[2].trim();
                 String hubType = data[3].trim();
                 String eventType = data[4].trim();
                 Date eventTime = parseDate(data[5].trim());
-
                 Double latitude = parseDouble(data[6].trim(), -90, 90, "latitude");
                 Double longitude = parseDouble(data[7].trim(), -180, 180, "longitude");
 
-                // ✅ **DB에서 기존 데이터 확인 후 저장 (없으면 새로 저장)**
+                if (epcCode.isEmpty()) {
+                    log.warn("❌ EPC 코드 누락: {}", row);
+                    continue;
+                }
+
+                // Product 조회 or 생성
                 Product product = productRepository.findByEpcCode(epcCode)
-                        .orElseGet(() -> productRepository.save(new Product(epcCode, productName)));
+                        .orElseGet(() -> productRepository.save(new Product(epcCode, productSerial, productName)));
 
-                // AI 변경해야함
-//                Product product = productRepository.findByEpcCode(epcCode)
-//                        .orElseGet(() -> productRepository.save(new Product(epcCode, productSerial,productName)));
-
+                // Hub 조회 or 생성
                 Hub hub = hubRepository.findByHubNameAndLatitudeAndLongitude(hubType, latitude, longitude)
                         .orElseGet(() -> hubRepository.save(new Hub(null, hubType, latitude, longitude)));
 
+                // Event 조회 or 생성
                 Event event = eventRepository.findByEventType(eventType)
                         .orElseGet(() -> eventRepository.save(new Event(null, eventType)));
 
-                // ✅ **ProductEventLog 저장 (Batch Insert 대비)**
+                // ProductEventLog 생성
                 ProductEventLog eventLog = ProductEventLog.builder()
                         .product(product)
                         .hub(hub)
@@ -160,75 +149,66 @@ public class CsvReaderService {
                         .build();
                 eventLogs.add(eventLog);
 
-                // ✅ **이상 탐지 실행**
+                // 이상 탐지 실행
                 anomalyDetectionService.processEvent(eventLog);
 
             } catch (Exception e) {
-                log.error("❌ Error processing row: {}, Error: {}", line, e.getMessage());
+                log.error("❌ CSV 행 파싱 중 오류: row={}, err={}", row, e.getMessage());
             }
         }
 
-        // ✅ **Batch Insert 실행 (DB 부하를 줄이기 위해 한 번에 저장)**
+        // Batch Insert
         if (!eventLogs.isEmpty()) {
             productEventLogRepository.saveAll(eventLogs);
-            log.info("✅ {}개의 데이터를 Batch Insert 완료", eventLogs.size());
+            log.info("✅ {}개 이벤트 Batch Insert 완료", eventLogs.size());
         }
     }
+
     /**
-     * ✅ 날짜 문자열을 Date 타입으로 변환 (초가 없는 경우 자동 보정)
+     * 📌 날짜 문자열 -> Date 변환
      */
     private Date parseDate(String dateStr) {
         try {
-            if (dateStr == null || dateStr.isEmpty()) { // 🚀 입력이 null 또는 빈 문자열이면 null 반환
-                return null;
-            }
-
-            // ✅ 초 단위가 없는 경우 추가 (`yyyy-MM-dd HH:mm` → `yyyy-MM-dd HH:mm:ss`)
+            if (dateStr.isEmpty()) return null;
+            // 시:분만 있을 때 초:00 추가
             if (dateStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{1,2}:\\d{2}")) {
-                dateStr = dateStr + ":00"; // ✅ 초(`:ss`)를 자동 추가
+                dateStr += ":00";
             }
-
-            return dateFormat.parse(dateStr); // 🚀 변환된 날짜 문자열을 Date 객체로 변환
+            return dateFormat.parse(dateStr);
         } catch (ParseException e) {
-            log.warn("❌ Invalid date format (날짜 변환 실패): {}", dateStr); // ⚠️ 변환 실패 시 경고 로그 출력
+            log.warn("❌ 날짜 파싱 실패: {}", dateStr);
             return null;
         }
     }
+
     /**
-     * ✅ 문자열을 Double 타입으로 변환 (범위 검사 포함)
+     * 📌 Double 변환 + 범위 검사
      */
     private Double parseDouble(String value, double min, double max, String fieldName) {
         try {
-            if (value == null || value.isEmpty()) { // 🚀 입력 값이 null 또는 빈 문자열이면 null 반환
+            if (value.isEmpty()) return null;
+            double d = Double.parseDouble(value);
+            if (d < min || d > max) {
+                log.warn("❌ {} 범위 밖: {}", fieldName, d);
                 return null;
             }
-
-            double parsedValue = Double.parseDouble(value); // ✅ 문자열을 double로 변환
-
-            if (parsedValue < min || parsedValue > max) { // ✅ 변환된 값이 지정된 범위를 벗어나면 로그 출력 후 null 반환
-                log.warn("❌ Invalid {}: {}", fieldName, value);
-                return null;
-            }
-
-            return parsedValue; // 🚀 정상적인 값이면 반환
+            return d;
         } catch (NumberFormatException e) {
-            log.warn("❌ Invalid number format for {}: {}", fieldName, value); // ⚠️ 변환 실패 시 경고 로그 출력
+            log.warn("❌ {} 숫자 변환 오류: {}", fieldName, value);
             return null;
         }
     }
-//    private Long parseLong(String value) {
-//        try {
-//            if (value == null || value.isEmpty()) { // 입력 값이 null 또는 빈 문자열이면 null 반환
-//                return null;
-//            }
-//            return Long.parseLong(value); // 문자열을 Long으로 변환
-//        } catch (NumberFormatException e) {
-//            log.warn("❌ Invalid number format: {}", value); // 변환 실패 시 경고 로그 출력
-//            return null;
-//        }
-//    }
 
-    
-
-    
+    /**
+     * 📌 Long 변환
+     */
+    private Long parseLong(String val) {
+        try {
+            if (val.isEmpty()) return null;
+            return Long.parseLong(val);
+        } catch (NumberFormatException e) {
+            log.warn("❌ Long 변환 오류: {}", val);
+            return null;
+        }
+    }
 }

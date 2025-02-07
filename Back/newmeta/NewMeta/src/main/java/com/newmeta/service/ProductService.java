@@ -100,12 +100,12 @@ public class ProductService {
      * @param productName 제품명
      * @return 저장된 또는 기존 제품 객체 반환
      */
-    public Product saveIfNotExists(String epcCode, String productName) {
+    public Product saveIfNotExists(String epcCode, Long productSerial,String productName) {
         log.info("🔍 [제품 존재 여부 확인] EPC 코드: {}", epcCode);
         return productRepo.findById(epcCode)
                 .orElseGet(() -> {
-                    log.info("🆕 [신규 제품 저장] EPC 코드: {}, 제품명: {}", epcCode, productName);
-                    return productRepo.save(new Product(epcCode, productName));
+                    log.info("🆕 [신규 제품 저장] EPC 코드: {}, 제품명: {}", epcCode, productSerial, productName);
+                    return productRepo.save(new Product(epcCode, productSerial,productName));
                 });
     }
 }

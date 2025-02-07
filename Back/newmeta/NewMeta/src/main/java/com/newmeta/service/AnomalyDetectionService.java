@@ -13,290 +13,297 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 📌 이상 탐지 로직 서비스
+ * - 새 이벤트 수신 시 processEvent → 캐시에 저장 → 필수 이벤트 충족 시 detectAnomalies 실행
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AnomalyDetectionService {
 
-    private final AnomalyLogRepository anomalyLogRepository; // 이상 탐지 로그 저장소 (DB 연동)
-    private final ProductEventLogRepository productEventLogRepository; // 제품 이벤트 로그 저장소 (DB 연동)
-    private final WebSocketService webSocketService; // 실시간 WebSocket 알림 서비스
-    private final EventHistoryCache eventHistoryCache; // 이벤트 히스토리 캐시 (최근 이벤트 저장)
-//     private final FastAPIService fastAPIService; // ✅ FastAPI 호출 기능 주석 처리
+    private final AnomalyLogRepository anomalyLogRepository;
+    private final ProductEventLogRepository productEventLogRepository;
+    private final WebSocketService webSocketService;
+    private final EventHistoryCache eventHistoryCache;
 
     /**
-     * 🚀 제품 이벤트 저장 및 이상 탐지 수행
-     * - 새로운 이벤트 로그가 들어올 때마다 실행됨.
-     * - 이벤트 데이터 검증 후 이상 탐지 수행.
+     * 개선사항(1): EPC 국내산 판별 규칙
+     * - 예: "001." 으로 시작하면 국내산, 나머지는 수입산
+     * - 실제 EPC 체계가 "001.88..." 만 국내산이라면 조건을 더 정밀하게 (예: startsWith("001.880"))
+     */
+    private static final String DOMESTIC_PREFIX = "001.";
+
+    /**
+     * 📌 이벤트 처리
+     * 1) DB 저장(이미 anomaly로 찍힌 EPC는 중복표시)
+     * 2) 캐시에 저장
+     * 3) 필수 이벤트 충족 시 -> detectAnomalies
      */
     public void processEvent(ProductEventLog eventLog) {
-        log.info("📌 [processEvent 호출] eventLog={}", eventLog);
-
-        // ✅ 이벤트 데이터가 NULL이면 조기 종료
         if (eventLog == null || eventLog.getProduct() == null) {
-            log.warn("❗ [데이터 누락] 이벤트 데이터가 NULL 입니다.");
+            log.warn("❗ [processEvent] 이벤트 데이터가 NULL");
+            return;
+        }
+        String epcCode = eventLog.getProduct().getEpcCode();
+
+        // 이미 anomaly로 찍힌 EPC는 중복 표시
+        boolean alreadyAnomaly = anomalyLogRepository.existsByEpcCode(epcCode);
+        eventLog.setIsAnomaly(alreadyAnomaly);
+        productEventLogRepository.save(eventLog);
+
+        // 캐시에 추가
+        eventHistoryCache.addEvent(eventLog);
+        List<ProductEventLog> storedEvents = eventHistoryCache.getEventsByEpc(epcCode);
+
+        // 국내/수입산 판단
+        boolean isDomestic = isDomesticProduct(epcCode);
+
+        // 필수 이벤트 목록 로드
+        List<String> requiredEvents = isDomestic ? getDomesticEventFlow() : getImportedEventFlow();
+
+        // 필수 이벤트가 모두 모였는지 확인
+        boolean allEventsPresent = requiredEvents.stream().allMatch(reqEv ->
+            storedEvents.stream().anyMatch(e -> e.getEvent().getEventType().equals(reqEv))
+        );
+
+        if (!allEventsPresent) {
+            // 개선사항(2): "일부 필수 이벤트가 없어도 순서 검증만 하겠다" 등 확장 가능
+            log.warn("⚠️ [이상 탐지 미실행] EPC={} | 아직 필수 이벤트를 모두 수집하지 않음", epcCode);
             return;
         }
 
-        String epcCode = eventLog.getProduct().getEpcCode(); // EPC 코드 추출
-        boolean isDomestic = isDomesticProduct(epcCode); // 국내산 여부 확인
-
-        log.info("✅ [EPC 코드 확인] EPC={} | isDomestic={}", epcCode, isDomestic);
-
-        // ✅ 동일 EPC 코드가 이미 anomaly_log에 존재하면 중복 저장 방지
-        boolean alreadyExists = anomalyLogRepository.existsByEpcCode(epcCode);
-        if (alreadyExists) {
-            log.info("❗ EPC [{}] 이미 anomaly_log 등록됨, 중복 저장 생략", epcCode);
-            eventLog.setIsAnomaly(true); // 기존에 이미 이상 탐지된 경우 표시
-            productEventLogRepository.save(eventLog);
-        } else {
-            eventLog.setIsAnomaly(false); // 기본적으로 정상 데이터로 설정
-            productEventLogRepository.save(eventLog);
-        }
-
-        // ✅ 이벤트 히스토리 저장 (메모리 캐시)
-        eventHistoryCache.addEvent(eventLog);
-        List<ProductEventLog> storedEvents = eventHistoryCache.getEventsByEpc(epcCode); // 저장된 이벤트 목록 조회
-
-        // ✅ 필수 이벤트 목록 설정 (국내산/수입산 여부에 따라 다름)
-        List<String> requiredEvents = isDomestic ? getDomesticEventFlow() : getImportedEventFlow();
-
-        log.info("✅ [필수 이벤트 확인] EPC={} | 저장된 이벤트 개수={} | 필요한 이벤트 개수={}",
-                 epcCode, storedEvents.size(), requiredEvents.size());
-    
-        // 필수 이벤트가 모두 충족되었는지 확인
-        boolean allEventsPresent = requiredEvents.stream()
-            .allMatch(reqEvent -> storedEvents.stream()
-                .anyMatch(e -> e.getEvent().getEventType().equals(reqEvent)));
-
-        if (!allEventsPresent) {
-            log.warn("⚠️ [이상 탐지 미실행] EPC={} | 필수 이벤트가 모두 모이지 않음", epcCode);
-            return; // ✅ 중복 실행 방지
-        }
-
+        // 필수 이벤트가 모두 모였다면 이상 탐지
         log.info("🚀 [이상 탐지 실행] EPC={} | 모든 필수 이벤트 수집 완료", epcCode);
         detectAnomalies(epcCode, storedEvents, requiredEvents);
     }
 
     /**
-     * 🚀 이상 탐지 실행
-     * - 이벤트 시퀀스를 검사하고 규칙을 위반한 경우 이상 탐지 수행
+     * 📌 이상 탐지 실행
+     * - 이벤트 순서, 데이터 변조, 국내/수입 첫 이벤트 검증, 허브 이동 없이 판매, 허용되지 않은 이벤트 등
      */
     private void detectAnomalies(String epcCode, List<ProductEventLog> events, List<String> requiredEvents) {
-        log.info("🚀 [detectAnomalies 호출] EPC={} | 이벤트 개수={}", epcCode, events.size());
+        log.info("🚀 [detectAnomalies] EPC={} | 이벤트 수={}", epcCode, events.size());
 
-        // ✅ 필수 이벤트 누락 확인
-        for (String requiredEvent : requiredEvents) {
-            if (events.stream().noneMatch(e -> e.getEvent().getEventType().equals(requiredEvent))) {
-                saveAnomalyLog(events.get(0), "이벤트 순서 오류", "필수 이벤트 [" + requiredEvent + "] 누락");
-                return;
-            }
-        }
-
-        // ✅ 이벤트 순서 오류 확인
-        if (!isEventSequenceValid(epcCode, events, requiredEvents)) {
-            saveAnomalyLog(events.get(0), "이벤트 순서 오류", "정상적인 이벤트 흐름을 따르지 않음");
-            return;
-        }
-        
-//        // 데이터 위변조 감지
-//        if (isDataTampered(events)) {
-//            saveAnomalyLog(events.get(0), "데이터 변조 감지", "EPC 코드 또는 이벤트 정보가 변조됨.");
-//            return;
-//        }
-
-        // ✅ 국내산 제품의 commissioning 이후 이벤트 검증
-        if (isDomesticProduct(epcCode) && !isDomesticFirstEventValid(epcCode, events)) {
-            saveAnomalyLog(events.get(0), "위조", "Commissioning 이후 첫 이벤트가 잘못됨.");
+        // (1) 이벤트 순서 오류
+        if (!isEventSequenceValid(events, requiredEvents)) {
+            saveAnomalyLog(events.get(0), "이벤트 순서 오류", "정상 흐름 불일치");
             return;
         }
 
-        // ✅ 수입산 제품의 custom_inbound 이후 이벤트 검증
-        if (!isDomesticProduct(epcCode) && !isImportedFirstEventValid(epcCode, events)) {
-            saveAnomalyLog(events.get(0), "밀수", "Custom_inbound 이후 첫 이벤트가 잘못됨.");
+        // (2) 데이터 변조 감지
+        // 개선사항(3): hubName, eventType은 정상 이동일 수 있으므로 제외
+        //            EPC와 productSerial, productName 등만 비교
+        if (isDataTampered(events)) {
+            saveAnomalyLog(events.get(0), "데이터 변조 감지", "EPC / 상품 정보 변조 의심");
             return;
         }
 
-        // ✅ 허브 이동 없이 직접 판매 검증
+        // (3) 국내산 첫 이벤트 검증
+        if (isDomesticProduct(epcCode) && !isDomesticFirstEventValid(events)) {
+            // 예: commissioning 이후 첫 이벤트가 aggregation/WMS_inbound 아니면 "위조"
+            saveAnomalyLog(events.get(0), "위조", "commissioning 이후 첫 이벤트가 올바르지 않음");
+            return;
+        }
+
+        // (4) 수입산 첫 이벤트 검증
+        if (!isDomesticProduct(epcCode) && !isImportedFirstEventValid(events)) {
+            // 예: custom_inbound 이후 첫 이벤트가 custom_outbound 아니면 "밀수"
+            saveAnomalyLog(events.get(0), "밀수", "custom_inbound 이후 첫 이벤트가 잘못됨");
+            return;
+        }
+
+        // (5) 허브 이동 없이 판매
         if (isDirectlySoldWithoutHub(epcCode)) {
-            saveAnomalyLog(events.get(0), "불법 유통", "허브 이동 없이 직접 판매됨.");
+            // 개선사항(4): 허브 거치지 않아도 판매가 가능하면 이 로직 해제
+            saveAnomalyLog(events.get(0), "불법 유통", "허브 이동 없이 판매 발생");
             return;
         }
 
-        // ✅ 허용되지 않은 이벤트 검증
+        // (6) 허용되지 않은 이벤트(불법 이벤트)
         if (hasUnauthorizedEvent(epcCode)) {
-            saveAnomalyLog(events.get(0), "이상 이벤트 발생", "허용되지 않은 이벤트 발생 감지됨.");
+            saveAnomalyLog(events.get(0), "이상 이벤트 발생", "허용되지 않은 이벤트 탐지됨");
             return;
         }
 
-        // ✅ FastAPI 호출 부분 주석 처리
-//         boolean isAnomalous = fastAPIService.isAnomalous(events);
-        log.info("📌 [FastAPI 호출 없이 검증 진행] EPC={}", epcCode);
-        
-        boolean isAnomalous = false; // FastAPI 호출 없이 기본값 설정
-        
+        // (7) AI 연동 예시 (주석)
+        // boolean isAnomalous = fastAPIService.isAnomalous(events);
+        boolean isAnomalous = false; // 실제 AI 호출 예시
         if (isAnomalous) {
-        	saveAnomalyLog(events.get(0), "AI 기반 이상 탐지", "LSTM 모델이 이상 패턴 감지");
-        } else {
-        	log.info("✅ [정상 이벤트] EPC={} | FastAPI 호출 없이 정상 처리", epcCode);
-        	for (ProductEventLog event : events) {
-        		event.setIsAnomaly(false);
-        		productEventLogRepository.save(event);
-        	}
+            saveAnomalyLog(events.get(0), "AI 기반 이상 탐지", "AI 모델이 이상치로 분류");
+            return;
         }
 
-        log.info("✅ [정상 이벤트 저장 완료] EPC={}", epcCode);
-        eventHistoryCache.removeEventHistory(epcCode);
+        // 여기까지 무사 통과하면 정상 처리
+        log.info("✅ [정상 이벤트] EPC={} | 모든 규칙 이상 없음", epcCode);
+        for (ProductEventLog e : events) {
+            e.setIsAnomaly(false);
+            productEventLogRepository.save(e);
+        }
 
+        // 개선사항(5): 필수 이벤트까지 모두 끝난 EPC라면 캐시에서 제거(메모리 절약)
+        eventHistoryCache.removeEventHistory(epcCode);
     }
 
-    // ✅ EPC별 이벤트 순서 검증 (올바른 순서인지 확인)
-    private boolean isEventSequenceValid(String epcCode, List<ProductEventLog> events, List<String> requiredEvents) {
-        List<String> eventSequence = events.stream()
-            .sorted(Comparator.comparing(ProductEventLog::getEventTime))
-            .map(e -> e.getEvent().getEventType())
-            .collect(Collectors.toList());
+    /**
+     * 📌 이벤트 순서 검증
+     * - 실제 이벤트 발생 시간을 정렬 → requiredEvents와 일치하는지 확인
+     * - 개선사항: 예외 상황(반품, 재포장) 많으면 상태 기계(FSM)나 룰 엔진을 활용
+     */
+    private boolean isEventSequenceValid(List<ProductEventLog> events, List<String> requiredEvents) {
+        // 시간 순 정렬
+        List<String> actualSequence = events.stream()
+                .sorted(Comparator.comparing(ProductEventLog::getEventTime))
+                .map(e -> e.getEvent().getEventType())
+                .collect(Collectors.toList());
 
-        int currentIndex = 0;
-        for (String actualEvent : eventSequence) {
-            if (currentIndex < requiredEvents.size() && actualEvent.equals(requiredEvents.get(currentIndex))) {
-                currentIndex++;
+        int idx = 0;
+        for (String ev : actualSequence) {
+            if (idx < requiredEvents.size() && ev.equals(requiredEvents.get(idx))) {
+                idx++;
             }
         }
-        return currentIndex == requiredEvents.size();
+        return (idx == requiredEvents.size());
     }
 
-    // ✅ 국내산 제품: commissioning 이후 첫 번째 이벤트 검증
-    private boolean isDomesticFirstEventValid(String epcCode, List<ProductEventLog> events) {
-        if (events.size() < 2) return false; // ✅ 첫 번째 이벤트가 없는 경우 예외 처리
-        ProductEventLog firstEvent = events.get(1); // 두 번째 이벤트 확인
+    /**
+     * 📌 데이터 변조 감지
+     * - 이전 이벤트 대비 EPC나 ProductSerial, ProductName이 바뀌었는지 점검
+     * - 개선사항: 상품명이 변경될 수도 있다면 예외 처리가 필요
+     */
+    private boolean isDataTampered(List<ProductEventLog> events) {
+        if (events.size() < 2) return false;
 
-        return List.of("aggregation", "WMS_inbound").contains(firstEvent.getEvent().getEventType());
+        ProductEventLog latest = events.get(events.size() - 1);
+        ProductEventLog prev = events.get(events.size() - 2);
+
+        boolean epcChanged = !Objects.equals(latest.getProduct().getEpcCode(), prev.getProduct().getEpcCode());
+        boolean serialChanged = !Objects.equals(latest.getProduct().getProductSerial(), prev.getProduct().getProductSerial());
+        boolean nameChanged = !Objects.equals(latest.getProduct().getProductName(), prev.getProduct().getProductName());
+
+        // 여기서는 epc 또는 serial, productName 중 하나만 달라도 변조로 본다
+        // 필요 시 productName 비교를 제외하거나, 별도 예외 허용 가능
+        boolean tampered = (epcChanged || serialChanged || nameChanged);
+        if (tampered) {
+            log.warn("🚨 [데이터 변조 감지] EPC={}", latest.getProduct().getEpcCode());
+        }
+        return tampered;
     }
 
+    /**
+     * 📌 국내산 첫 이벤트 검증
+     * - commissioning 이후 'aggregation' or 'WMS_inbound'가 와야 함 (예시)
+     * - 개선사항: 추가 허용 이벤트가 있으면 이 로직 수정
+     */
+    private boolean isDomesticFirstEventValid(List<ProductEventLog> events) {
+        if (events.size() < 2) return false;
+        String secondEventType = events.get(1).getEvent().getEventType();
+        return List.of("aggregation", "WMS_inbound").contains(secondEventType);
+    }
 
-    // ✅ 수입산 제품: custom_inbound 이후 첫 번째 이벤트 검증
-    private boolean isImportedFirstEventValid(String epcCode, List<ProductEventLog> events) {
-    	 if (events.size() < 2) return false;
-         return "custom_outbound".equals(events.get(1).getEvent().getEventType());
-     }
+    /**
+     * 📌 수입산 첫 이벤트 검증
+     * - custom_inbound 이후 'custom_outbound'가 와야 함 (예시)
+     * - 개선사항: 허브 입고를 허용하려면 수정
+     */
+    private boolean isImportedFirstEventValid(List<ProductEventLog> events) {
+        if (events.size() < 2) return false;
+        String secondEventType = events.get(1).getEvent().getEventType();
+        return "custom_outbound".equals(secondEventType);
+    }
 
-    // ✅ 허브 이동 없이 직접 판매된 경우 감지
+    /**
+     * 📌 허브 이동 없이 판매
+     * - stock_inbound(HUB) 이벤트가 한 번도 없이 stock_outbound(Sell)이 있으면 "불법"
+     * - 개선사항: 실제 운영에서 직판매가 가능하다면 로직 해제
+     */
     private boolean isDirectlySoldWithoutHub(String epcCode) {
         long hubInboundCount = productEventLogRepository.countByProductEpcCodeAndEventEventType(epcCode, "stock_inbound(HUB)");
-        return hubInboundCount == 0 && productEventLogRepository.existsByProductEpcCodeAndEventEventType(epcCode, "stock_outbound(Sell)");
+        boolean sold = productEventLogRepository.existsByProductEpcCodeAndEventEventType(epcCode, "stock_outbound(Sell)");
+        return (hubInboundCount == 0 && sold);
     }
 
-
-    // ✅ 허용되지 않은 이벤트 발생 감지
-    private boolean hasUnauthorizedEvent(String epcCode) {
-        List<String> unauthorizedEvents = List.of("illegal_transfer", "fake_aggregation", "unauthorized_custom");
-        return productEventLogRepository.findByProductEpcCode(epcCode).stream()
-            .map(e -> e.getEvent().getEventType())
-            .anyMatch(unauthorizedEvents::contains);
-    }
     /**
-     * 🚀 데이터 변조 감지
-     * - 동일 EPC 코드의 이전 이벤트와 비교하여 제품 정보 또는 허브 정보가 변조되었는지 확인
-     * - EPC 코드, 이벤트 유형, 허브 정보 변경 여부 확인
-     * 
-     * @param events 동일 EPC 코드의 제품 이벤트 로그 리스트
-     * @return 변조 감지 여부 (true = 변조 감지, false = 정상)
+     * 📌 허용되지 않은 이벤트 목록
+     * - illegal_transfer, fake_aggregation, unauthorized_custom 등
+     * - 개선사항: 실제 DB나 설정 파일에서 불법 이벤트를 관리 가능
      */
-//    private boolean isDataTampered(List<ProductEventLog> events) {
-//        if (events.size() < 2) return false; // ✅ 이전 이벤트가 없는 경우 변조 감지 불필요
-//
-//        ProductEventLog latestEvent = events.get(events.size() - 1);
-//        ProductEventLog previousEvent = events.get(events.size() - 2);
-//
-//        // ✅ 변조 여부 확인 (허브, 이벤트 유형, 제품명 등 비교)
-//        boolean isTampered = !latestEvent.getHub().getHubName().equals(previousEvent.getHub().getHubName()) ||
-//                             !latestEvent.getEvent().getEventType().equals(previousEvent.getEvent().getEventType()) ||
-//                             !latestEvent.getProduct().getProductName().equals(previousEvent.getProduct().getProductName());
-//
-//        if (isTampered) {
-//            log.warn("🚨 [데이터 변조 감지] EPC={} | 이전 이벤트와 불일치 감지됨!", latestEvent.getProduct().getEpcCode());
-//        }
-//
-//        return isTampered;
-//    }
+    private boolean hasUnauthorizedEvent(String epcCode) {
+        List<String> unauthorized = List.of("illegal_transfer", "fake_aggregation", "unauthorized_custom");
+        return productEventLogRepository.findByProductEpcCode(epcCode).stream()
+                .map(e -> e.getEvent().getEventType())
+                .anyMatch(unauthorized::contains);
+    }
 
-    
     /**
-     * ✅ anomaly_log 저장 + WebSocket 실시간 알림 추가
-     * 
-     * - 특정 EPC 코드에 대해 이상 탐지가 발생했을 때 실행됨.
-     * - anomaly_log 테이블에 새로운 이상 탐지 기록을 저장.
-     * - 실시간 WebSocket을 통해 관리자에게 이상 탐지 알림을 전송.
-     * 
-     * @param eventLog     이상 탐지가 발생한 제품 이벤트 로그
-     * @param anomalyType  이상 탐지 유형 (예: "위조", "이벤트 순서 오류", "불법 유통" 등)
-     * @param reason       이상 탐지가 발생한 원인 (예: "Commissioning 누락", "필수 이벤트 누락" 등)
+     * 📌 이상 탐지 발생 시 anomaly_log에 기록 + WebSocket 알림
      */
     private void saveAnomalyLog(ProductEventLog eventLog, String anomalyType, String reason) {
-        log.info("📌 [saveAnomalyLog 호출] eventLog={} | anomalyType={} | reason={}", eventLog, anomalyType, reason);
-
-        // ✅ 필수 정보가 없는 경우 이상 탐지 로그 저장을 중단 (예외 방지)
-        if (eventLog == null || eventLog.getProduct() == null || eventLog.getEvent() == null || eventLog.getHub() == null) {
-            log.warn("❗ [이상 탐지 저장 실패] NULL 값 존재 - anomalyLog 생성 중단");
+        if (eventLog == null || eventLog.getProduct() == null || 
+            eventLog.getEvent() == null || eventLog.getHub() == null) {
+            log.warn("❗ [이상 탐지 저장 실패] 필수 정보가 NULL");
             return;
         }
 
-        String epcCode = eventLog.getProduct().getEpcCode(); // 제품의 EPC 코드 추출
-        log.info("🚨 [이상 탐지 발생] EPC={} | 유형={} | 이유={}", epcCode, anomalyType, reason);
+        String epcCode = eventLog.getProduct().getEpcCode();
+        log.warn("🚨 [이상 탐지 발생] EPC={} | 유형={} | 이유={}", epcCode, anomalyType, reason);
 
-        // ✅ 해당 이벤트 로그를 이상 탐지(`isAnomaly = true`)로 업데이트
+        // 이벤트 로그 anomaly 표시
         eventLog.setIsAnomaly(true);
-        productEventLogRepository.save(eventLog); // 변경 사항 DB 반영
+        productEventLogRepository.save(eventLog);
 
-        // ✅ anomaly_log 객체 생성 (이상 탐지 로그 기록)
+        // anomaly_log 작성
         AnomalyLog anomalyLog = AnomalyLog.builder()
-                .anomalyType(anomalyType) // 이상 탐지 유형 (예: "위조", "불법 유통")
-                .reason(reason) // 이상 탐지 사유
-                .epcCode(epcCode) // 해당 EPC 코드
-                .anomalyTimestamp(eventLog.getEventTime()) // 이상 탐지 발생 시간 (이벤트 발생 시간 기준)
-                .anomalyEventType(eventLog.getEvent().getEventType()) // 이상 탐지와 연관된 이벤트 유형
-                .anomalyHub(eventLog.getHub().getHubName()) // 이상 탐지가 발생한 허브 이름
-                .anomalyProductName(eventLog.getProduct().getProductName()) // 이상 탐지된 제품명
-                .latitude(eventLog.getHub().getLatitude()) // 허브 위치 (위도)
-                .longitude(eventLog.getHub().getLongitude()) // 허브 위치 (경도)
-                .productEventLog(eventLog) // 연관된 제품 이벤트 로그 정보
+                .anomalyType(anomalyType)
+                .reason(reason)
+                .epcCode(epcCode)
+                .anomalyTimestamp(eventLog.getEventTime())
+                .anomalyEventType(eventLog.getEvent().getEventType())
+                .anomalyHub(eventLog.getHub().getHubName())
+                .anomalyProductName(eventLog.getProduct().getProductName())
+                .latitude(eventLog.getHub().getLatitude())
+                .longitude(eventLog.getHub().getLongitude())
+                .productEventLog(eventLog)
                 .build();
 
-        // ✅ 이상 탐지 로그를 DB에 저장
         anomalyLogRepository.save(anomalyLog);
-        log.info("✅ [이상 로그 저장 완료] EPC={}", epcCode);
 
-        // ✅ anomaly_log 정보를 기반으로 WebSocket 알림을 위한 DTO 생성
-        AnomalyDTO anomalyAlert = AnomalyDTO.builder()
-                .anomalyType(anomalyLog.getAnomalyType()) // 이상 탐지 유형
-                .reason(anomalyLog.getReason()) // 이상 탐지 사유
-                .epcCode(anomalyLog.getEpcCode()) // EPC 코드
+        // WebSocket 알림
+        AnomalyDTO alert = AnomalyDTO.builder()
+                .anomalyType(anomalyLog.getAnomalyType())
+                .reason(anomalyLog.getReason())
+                .epcCode(anomalyLog.getEpcCode())
                 .build();
-
-        // ✅ WebSocket을 통해 관리자에게 실시간 이상 탐지 알림 전송
-        webSocketService.sendAnomalyAlert(Collections.singletonList(anomalyAlert));
-
-        log.info("🚨 [WebSocket 알림 전송 완료] EPC={} | reason={}", epcCode, reason);
+        webSocketService.sendAnomalyAlert(Collections.singletonList(alert));
     }
 
-
-    // ✅ 국내산 여부 판단
+    /**
+     * 📌 EPC가 "001."으로 시작하면 국내산, 그 외는 수입산 (예시)
+     * - 개선사항: 필요 시 "001.880" 체크로 변경
+     */
     private boolean isDomesticProduct(String epcCode) {
-        return epcCode.startsWith("001.880");
+        return epcCode != null && epcCode.startsWith(DOMESTIC_PREFIX);
     }
 
-    // ✅ 국내산 제품 이벤트 흐름
+    /**
+     * 📌 국내산 필수 이벤트 흐름(예시)
+     * - 개선사항: 실제 현장에 맞게 추가/삭제
+     */
     private List<String> getDomesticEventFlow() {
         return List.of("commissioning", "aggregation", "WMS_inbound", "WMS_outbound",
-                       "stock_inbound(HUB)", "stock_outbound(HUB)", "stock_inbound(Wholesaler)",
-                       "stock_outbound(Wholesaler)", "stock_inbound(Reseller)", "stock_outbound(Sell)");
+                       "stock_inbound(HUB)", "stock_outbound(HUB)",
+                       "stock_inbound(Wholesaler)", "stock_outbound(Wholesaler)",
+                       "stock_inbound(Reseller)", "stock_outbound(Sell)");
     }
 
-    // ✅ 수입산 제품 이벤트 흐름
+    /**
+     * 📌 수입산 필수 이벤트 흐름(예시)
+     * - 개선사항: 만약 custom_outbound를 안 거치고 바로 HUB로 갈 수 있다면 수정 필요
+     */
     private List<String> getImportedEventFlow() {
-        return List.of("custom_inbound", "custom_outbound", "stock_inbound(HUB)", "stock_outbound(HUB)",
-                       "stock_inbound(Wholesaler)", "stock_outbound(Wholesaler)", "stock_inbound(Reseller)",
-                       "stock_outbound(Sell)");
+        return List.of("custom_inbound", "custom_outbound",
+                       "stock_inbound(HUB)", "stock_outbound(HUB)",
+                       "stock_inbound(Wholesaler)", "stock_outbound(Wholesaler)",
+                       "stock_inbound(Reseller)", "stock_outbound(Sell)");
     }
 }
