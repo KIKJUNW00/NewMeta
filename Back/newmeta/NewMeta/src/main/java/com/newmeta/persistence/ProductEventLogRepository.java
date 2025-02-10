@@ -58,4 +58,9 @@ public interface ProductEventLogRepository extends JpaRepository<ProductEventLog
 	}
 
 	long countByProductEpcCodeAndEventEventType(String epcCode, String string);
+
+
+
+
+
 }

@@ -34,10 +34,6 @@ public class SCMDataService {
     private final WebSocketService webSocketService; 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    
-    
-    
-    
     /**
      * 🚀 특정 필터 조건을 적용하여 SCM 데이터를 조회
      */
@@ -135,20 +131,6 @@ public class SCMDataService {
                 ));
     }
 
-//    /**
-//     * 🚀 [이상 탐지 데이터 조회]
-//     */
-//    public List<AnomalyDTO> getFilteredAnomalyData(String epcCode, String hubName, String productName, String startDate, String endDate) {
-//        log.info("📡 이상 탐지 데이터 조회 요청");
-//
-//        return anomalyLogRepository.findAll().stream()
-//                .filter(log -> (epcCode == null || log.getEpcCode().equals(epcCode)))
-//                .filter(log -> (hubName == null || log.getAnomalyHub().equals(hubName)))
-//                .filter(log -> (productName == null || log.getAnomalyProductName().equals(productName)))
-//                .filter(log -> isWithinDateRange(log.getAnomalyTimestamp(), startDate, endDate))
-//                .map(this::convertAnomalyLogToDTO)
-//                .collect(Collectors.toList());
-//    }
     /**
      * 🚀 [허브별 실시간 물류 데이터 반환] (getSCMData 오류 해결)
      */
@@ -204,11 +186,22 @@ public class SCMDataService {
         log.info("📡 SCM 데이터 WebSocket 전송 요청");
         webSocketService.sendRealTimeSCMData(getSCMData());
     }
-
+    /**
+     * 🚀 [이상 탐지 데이터 WebSocket 전송]
+     */
     public void sendAnomalyDataToWebSocket() {
         log.info("📡 이상 탐지 데이터 WebSocket 전송 요청");
-        webSocketService.sendAnomalyAlert(getFilteredAnomalyData(null, null, null, null, null));
+        List<AnomalyDTO> anomalyData = getFilteredAnomalyData(null, null, null, null, null);
+        
+        if (anomalyData.isEmpty()) {
+            log.warn("⚠️ 이상 탐지 데이터가 없음, WebSocket 전송 생략");
+            return;
+        }
+        
+        webSocketService.sendAnomalyAlert(anomalyData);
+        log.info("✅ WebSocket - 이상 탐지 데이터 {}개 전송 완료", anomalyData.size());
     }
+
 
     public void sendHubWiseDataToWebSocket() {
         log.info("📡 허브별 데이터 WebSocket 전송 요청");

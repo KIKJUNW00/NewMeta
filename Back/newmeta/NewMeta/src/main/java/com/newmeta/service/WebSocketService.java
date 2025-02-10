@@ -73,18 +73,19 @@ public class WebSocketService {
 
 
     /**
-     * 📡 WebSocket을 통해 실시간 데이터 전송 (SCM 데이터 리스트를 JSON 형식으로 변환 후 전송)
-     * @param data 전송할 실시간 데이터 리스트
+     * 📡 WebSocket을 통해 실시간 데이터 전송
      */
     public void sendRealTimeData(List<Map<String, Object>> data) {
         try {
-            String jsonData = objectMapper.writeValueAsString(data); // 데이터를 JSON 문자열로 변환
-            for (WebSocketSession session : sessions) { // 현재 연결된 모든 세션에 대해 반복
-                if (session.isOpen()) { // WebSocket 세션이 열려 있는 경우에만 전송
-                    session.sendMessage(new TextMessage(jsonData)); // 클라이언트에게 JSON 데이터 전송
+            String jsonData = objectMapper.writeValueAsString(data);
+
+            for (WebSocketSession session : sessions) {
+                if (session.isOpen()) {
+                    session.sendMessage(new TextMessage(jsonData));
+                    log.info("📡 WebSocket 메시지 전송 완료: 세션 ID={}", session.getId());
                 }
             }
-        } catch (IOException e) { // 데이터 변환 또는 전송 중 오류 발생 시 예외 처리
+        } catch (IOException e) {
             log.error("⚠️ WebSocket 데이터 전송 오류", e);
         }
     }

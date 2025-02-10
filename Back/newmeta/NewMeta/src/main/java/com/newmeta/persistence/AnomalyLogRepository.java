@@ -47,4 +47,6 @@ public interface AnomalyLogRepository extends JpaRepository<AnomalyLog, Long> {
 
 	boolean existsByEpcCode(String epcCode);
 
+	boolean existsByEpcCodeAndAnomalyTimestamp(String epcCode, Date eventTime);
+
 }
