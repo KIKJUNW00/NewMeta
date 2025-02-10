@@ -11,6 +11,7 @@ import com.newmeta.cache.EventHistoryCache; // 이벤트 히스토리를 캐시�
 import com.newmeta.domain.AnomalyLog;          // 이상 탐지 기록을 저장하는 엔티티
 import com.newmeta.domain.ProductEventLog;     // 제품 이벤트 로그를 저장하는 엔티티
 import com.newmeta.domain.dto.AnomalyDTO;       // 이상 탐지 관련 데이터를 전송하는 DTO
+import com.newmeta.domain.dto.PredictionResultDTO;
 import com.newmeta.persistence.AnomalyLogRepository;      // 이상 탐지 로그를 데이터베이스에 저장하는 리포지토리
 import com.newmeta.persistence.ProductEventLogRepository; // 제품 이벤트 로그를 데이터베이스에 저장하는 리포지토리
 
@@ -102,21 +103,38 @@ public class AnomalyDetectionService {
             return; // 메서드 종료
         }
 
-        // AI 기반 이상 탐지
-        List<Map<String, Object>> aiResults = fastAPIService.detectAnomalies(events);
-        if (!aiResults.isEmpty()) { // AI 결과가 있으면
-            String anomalyEpc = (String) aiResults.get(0).get("epc_code"); // 이상 EPC 코드 추출
-            Optional<ProductEventLog> aiEvt = events.stream()
-                    .filter(e -> e.getProduct().getEpcCode().equals(anomalyEpc)) // 해당 EPC 코드에 대한 이벤트 찾기
-                    .findFirst();
-            if (aiEvt.isPresent()) { // 이상 이벤트가 발견되면
-                saveAnomalyLog(aiEvt.get(), "AI 기반 이상 탐지", "LSTM 모델이 이상 패턴 감지"); // 이상 로그 저장
-            } else {
-                saveAnomalyLog(events.get(0), "AI 기반 이상 탐지", "LSTM 모델 이상 패턴 (fallback)"); // 대체 로그 저장
+     // AI 기반 이상 탐지
+        List<PredictionResultDTO> aiResults = fastAPIService.detectAnomalies(events); // FastAPIService를 호출하여 이상 탐지 결과를 받아옴
+        if (!aiResults.isEmpty()) { // AI 결과가 비어있지 않은 경우
+            for (PredictionResultDTO result : aiResults) { 
+                String anomalyEpc = result.getEpcCode(); // 결과에서 EPC 코드 추출
+                boolean isAnomaly = result.isAnomaly(); // IsAnomaly 값을 가져옴
+
+                Optional<ProductEventLog> aiEvt = events.stream() // 이벤트 목록에서
+                        .filter(e -> e.getProduct().getEpcCode().equals(anomalyEpc)) // AI 결과의 EPC 코드와 일치하는 이벤트를 필터링
+                        .findFirst(); // 첫 번째 매칭되는 이벤트를 Optional로 반환
+
+                if (aiEvt.isPresent()) { // 매칭되는 이벤트가 존재하는 경우
+                    if (isAnomaly) { // IsAnomaly 값이 true이면 이상 데이터로 처리
+                        saveAnomalyLog(aiEvt.get(), "AI 기반 이상 탐지", "LSTM 모델이 이상 패턴 감지");
+                    } else { // IsAnomaly 값이 false이면 정상 데이터로 처리
+                        aiEvt.get().setIsAnomaly(false);
+                        productEventLogRepository.save(aiEvt.get());
+                        log.info("✅ [정상 이벤트 저장 - AI 결과] EPC={} | LSTM 모델 결과: 정상", anomalyEpc);
+                    }
+                } else { // 매칭되는 이벤트가 없는 경우
+                    if (isAnomaly) { // IsAnomaly 값이 true이면 첫 번째 이벤트를 사용하여 이상 로그 저장 (fallback)
+                        saveAnomalyLog(events.get(0), "AI 기반 이상 탐지", "LSTM 모델 이상 패턴 (fallback)");
+                    } else { // IsAnomaly 값이 false이면 첫 번째 이벤트를 정상 데이터로 저장
+                        events.get(0).setIsAnomaly(false);
+                        productEventLogRepository.save(events.get(0));
+                        log.info("✅ [정상 이벤트 저장 - AI 결과] EPC={} | LSTM 모델 결과: 정상 (fallback)", events.get(0).getProduct().getEpcCode());
+                    }
+                }
             }
             return; // 메서드 종료
         }
-        
+
         // 모든 이벤트를 정상으로 저장
         for (ProductEventLog e : events) {
             e.setIsAnomaly(false); // 이상 여부를 false로 설정

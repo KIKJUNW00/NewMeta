@@ -40,7 +40,7 @@ public class CsvReaderService {
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     // CSV 파일 경로 (예: 설정 파일에서 주입 가능)
-    private static final String FILE_PATH = "C:\\Users\\HOME\\OneDrive - 동의대학교\\바탕 화면\\더미/더미데이터이상치.csv";
+    private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\더미/이상치데이터.csv";
 
     // Batch 크기
     private static final int BATCH_SIZE = 100;

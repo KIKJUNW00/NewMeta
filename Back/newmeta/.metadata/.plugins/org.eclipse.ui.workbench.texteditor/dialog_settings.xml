@@ -3,6 +3,8 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="true"/>
 	<list key="searchhistory">
+		<item value="jackson-databind"/>
+		<item value="fasterxml"/>
 		<item value="isImportedFirstEventValid"/>
 		<item value="requiredEvents "/>
 		<item value="중복"/>
