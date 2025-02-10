@@ -16,9 +16,7 @@ export function BoardSCM({ onProductClick }) {
         let totalPages = 1;
 
         while (page < totalPages) {
-          const response = await fetch(
-            `http://10.125.121.228:8080/producteventLog/paged?page=${page}&size=30`
-          );
+          const response = await fetch(`http://10.125.121.228:8080/producteventLog/paged?page=${page}&size=30`);
           const data = await response.json();
 
           if (data && Array.isArray(data.content)) {
@@ -31,24 +29,8 @@ export function BoardSCM({ onProductClick }) {
           }
         }
 
-        console.log("📌 전체 데이터 개수 (API 응답):", allData.length);
-
-        const uniqueDataMap = new Map();
-
-        allData.forEach((item) => {
-          if (!uniqueDataMap.has(item.epcCode)) {
-            uniqueDataMap.set(item.epcCode, item);
-          } else {
-            const existingItem = uniqueDataMap.get(item.epcCode);
-            if (!existingItem.latitude || !existingItem.longitude) {
-              uniqueDataMap.set(item.epcCode, item);
-            } else if (item.latitude && item.longitude) {
-              uniqueDataMap.set(item.epcCode, item);
-            }
-          }
-        });
-
-        setProductData(Array.from(uniqueDataMap.values()));
+        console.log("📌 전체 이벤트 개수:", allData.length);
+        setProductData(allData); // 전체 이벤트 데이터를 유지
       } catch (error) {
         console.error("API 요청 오류:", error);
       }
@@ -57,20 +39,49 @@ export function BoardSCM({ onProductClick }) {
     fetchAllData();
   }, []);
 
-  // 검색어와 originFilter에 따른 데이터 필터링 (대소문자 구분 없이)
-  const filteredData = productData.filter((product) => {
-    const searchMatch = product.epcCode
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    let originMatch = true;
-    // EPC 코드의 5번째 문자부터 3글자가 "880"이면 국내산으로 판단
-    if (originFilter === "domestic") {
-      originMatch = product.epcCode.slice(4, 7) === "880";
-    } else if (originFilter === "imported") {
-      originMatch = product.epcCode.slice(4, 7) !== "880";
+
+
+  const handleProductClick = (epcCode) => {
+    // console.log("🔍 비교할 epcCode:", epcCode);
+    // console.log("📋 전체 productData:", productData);
+
+    const filteredEvents = productData.filter((event) => {
+      const currentEpcCode = event.epcCode?.trim();
+      return currentEpcCode === epcCode.trim();  // 형식 차이 제거 후 비교
+    });
+
+    console.log("📋 같은 EPC 코드의 모든 이벤트:", filteredEvents);
+    onProductClick(epcCode, filteredEvents);
+  };
+
+
+
+  // EPC 코드 중복 제거 함수
+const getUniqueData = (data) => {
+  const uniqueMap = new Map(); // EPC 코드별로 Map을 생성해 중복 제거
+  data.forEach((item) => {
+    if (!uniqueMap.has(item.epcCode)) {
+      uniqueMap.set(item.epcCode, item);
     }
-    return searchMatch && originMatch;
   });
+  return Array.from(uniqueMap.values());
+};
+
+const filteredData = getUniqueData(productData).filter((product) => {
+  const searchMatch = product.epcCode
+    .toLowerCase()
+    .includes(searchQuery.toLowerCase());
+  let originMatch = true;
+
+  // EPC 코드의 5번째 문자부터 3글자가 "880"이면 국내산으로 판단
+  if (originFilter === "domestic") {
+    originMatch = product.epcCode.slice(4, 7) === "880";
+  } else if (originFilter === "imported") {
+    originMatch = product.epcCode.slice(4, 7) !== "880";
+  }
+  return searchMatch && originMatch;
+});
+
 
   // 검색어 변경 시 페이지를 1로 리셋
   useEffect(() => {
@@ -97,8 +108,8 @@ export function BoardSCM({ onProductClick }) {
         <button
           onClick={() => setOriginFilter("domestic")}
           className={`px-4 py-2 rounded text-sm h-10 w-[18%] ${originFilter === "domestic"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-700"
+            ? "bg-blue-500 text-white"
+            : "bg-gray-200 text-gray-700"
             }`}
         >
           국내산
@@ -106,8 +117,8 @@ export function BoardSCM({ onProductClick }) {
         <button
           onClick={() => setOriginFilter("imported")}
           className={`px-4 py-2 rounded text-sm h-10 w-[18%] ${originFilter === "imported"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-700"
+            ? "bg-blue-500 text-white"
+            : "bg-gray-200 text-gray-700"
             }`}
         >
           수입산
@@ -125,18 +136,19 @@ export function BoardSCM({ onProductClick }) {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((product, index) => (
+            {paginatedData.map((product) => (
               <tr
-                key={product.epcCode}
+                key={product.productEventLogId} // productEventLogId 사용
                 className="cursor-pointer hover:bg-gray-100"
-                onClick={() => onProductClick(product.epcCode)}
+                onClick={() => handleProductClick(product.epcCode)}
               >
-                <td className="px-6 py-4 truncate">{index + 1}</td>
+                <td className="px-6 py-4 truncate">{product.productEventLogId}</td>
                 <td className="px-6 py-4 truncate">{product.productName}</td>
                 <td className="px-6 py-4 truncate">{product.epcCode}</td>
               </tr>
             ))}
           </tbody>
+
         </table>
       </div>
 

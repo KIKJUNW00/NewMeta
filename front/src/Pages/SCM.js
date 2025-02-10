@@ -6,11 +6,18 @@ export default function SCMDashboard() {
 
   // 선택한 제품의 EPC 코드를 저장하는 상태
   const [selectedEpcCode, setSelectedEpcCode] = useState(null);
+  const [selectedEvents, setSelectedEvents] = useState([]);
 
   // BoardSCM에서 제품을 클릭하면 호출되는 콜백
-  const handleProductClick = (epcCode) => {
+  const handleProductClick = (epcCode, events) => {
+    console.log("📡 제품 클릭:", epcCode);
+    console.log("📋 같은 EPC 코드의 모든 이벤트:", events);
+  
     setSelectedEpcCode(epcCode);
+    setSelectedEvents(events); // 모든 이벤트 목록 저장
   };
+  
+  
   return (
     <div className="h-screen bg-gray-100 p-4">
 
@@ -30,7 +37,7 @@ export default function SCMDashboard() {
               <h2 className="text-lg font-bold text-gray-700 mb-2">SCM 과정</h2>
               <div className="flex flex-col justify-center items-center flex-1">
                 {selectedEpcCode ? (
-                  <SCMarchi epcCode={selectedEpcCode} />
+                  <SCMarchi epcCode={selectedEpcCode} events={selectedEvents} />
                 ) : (
                   <div className="flex-1 flex justify-center items-center">
                     <p className="text-gray-500">제품을 선택하면 SCM 과정을 확인할 수 있습니다.</p>
@@ -41,6 +48,14 @@ export default function SCMDashboard() {
 
             {/* 하단 두 개의 그래프 영역 */}
             <div className="flex mt-4 space-x-4">
+              <div className="w-1/2 border border-gray-300 bg-gray-50 p-4 rounded">
+                <h2 className="text-lg font-bold text-gray-700 mb-2">그래프</h2>
+                {/* 실제 차트 컴포넌트로 교체 가능 */}
+                <div className="flex-1 flex justify-center items-center h-full">
+                  <p>차트 영역</p>
+                </div>
+              </div>
+              
               <div className="w-1/2 border border-gray-300 bg-gray-50 p-4 rounded">
                 <h2 className="text-lg font-bold text-gray-700 mb-2">그래프</h2>
                 {/* 실제 차트 컴포넌트로 교체 가능 */}
