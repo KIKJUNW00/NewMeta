@@ -55,31 +55,19 @@ public class AnomalyLogController {
         return ResponseEntity.ok(anomalyLogService.getAnomaliesByEpc(epcCode));
     }
 
-    /**
-     * 🚀 **특정 제품명으로 이상 탐지 조회**
-     * ✅ 특정 제품명과 관련된 이상 탐지 로그를 검색하여 반환
-     * @param productName 조회할 제품명
-     * @return 해당 제품명과 관련된 이상 탐지 로그 목록
-     */
-    @GetMapping("/by-product/{productName}")
-    public ResponseEntity<List<AnomalyLog>> getAnomaliesByProduct(@PathVariable String productName) {
-        return ResponseEntity.ok(anomalyLogService.getAnomaliesByProduct(productName));
+    // 🚀 특정 제품명으로 이상 탐지 데이터 조회
+    @GetMapping("/product/{productName}")
+    public ResponseEntity<List<AnomalyLog>> getAnomaliesByProductName(@PathVariable String productName) {
+        return ResponseEntity.ok(anomalyLogService.getAnomaliesByProductName(productName));
     }
 
-    /**
-     * 🚀 **특정 날짜 범위의 이상 탐지 조회**
-     * ✅ 특정 기간 동안 발생한 이상 탐지 로그를 반환
-     * @param startDate 조회할 시작 날짜 (yyyy-MM-dd 형식)
-     * @param endDate 조회할 종료 날짜 (yyyy-MM-dd 형식)
-     * @return 해당 기간 내 발생한 이상 탐지 로그 목록
-     */
-    @GetMapping("/by-date")
+    // 🚀 특정 날짜 범위의 이상 탐지 데이터 조회
+    @GetMapping("/date-range")
     public ResponseEntity<List<AnomalyLog>> getAnomaliesByDateRange(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate) {
         return ResponseEntity.ok(anomalyLogService.getAnomaliesByDateRange(startDate, endDate));
     }
-
     /**
      * 🚀 **이상 탐지 데이터 삭제**
      * ✅ 특정 ID의 이상 탐지 데이터를 삭제

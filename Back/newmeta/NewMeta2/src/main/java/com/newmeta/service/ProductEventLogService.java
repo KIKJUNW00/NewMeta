@@ -17,10 +17,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.newmeta.domain.Dummy;
-import com.newmeta.domain.Event;
-import com.newmeta.domain.Hub;
-import com.newmeta.domain.Product;
 import com.newmeta.domain.ProductEventLog;
 import com.newmeta.domain.dto.ProductEventLogDTO;
 import com.newmeta.persistence.AnomalyLogRepository;
@@ -52,73 +48,25 @@ public class ProductEventLogService {
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     
-    
-    /**
-     * 🚀 ProductEventLog 저장 (Hub 및 Event 중복 방지)
-     */
-    @Transactional
-    public void saveProductEventLog(Dummy dummy) {
-        try {
-            // ✅ Product 조회 또는 저장
-            Product product = productRepo.findById(dummy.getEpcCode())
-                    .orElseGet(() -> productRepo.save(Product.builder()
-                            .epcCode(dummy.getEpcCode())
-                            .productName(dummy.getProductName())
-                            .build()));
-
-            // ✅ Hub 조회 또는 저장 (중복 방지)
-            Hub hub = hubRepo.findByHubTypeAndLatitudeAndLongitude(
-                    dummy.getHubType(), dummy.getLatitude(), dummy.getLongitude())
-                    .orElseGet(() -> hubRepo.save(Hub.builder()
-                            .hubType(dummy.getHubType())
-                            .latitude(dummy.getLatitude())
-                            .longitude(dummy.getLongitude())
-                            .build()));
-
-            // ✅ Event 조회 또는 저장 (중복 방지)
-            Event event = eventRepo.findByEventType(dummy.getEventType())
-                    .orElseGet(() -> eventRepo.save(Event.builder()
-                            .eventType(dummy.getEventType())
-                            .build()));
-
-            // ✅ eventTime을 Date 타입으로 변환
-            Date parsedEventTime = convertToDate(dummy.getEventTime());
-
-            // ✅ ProductEventLog 생성 및 저장
-            ProductEventLog eventLog = ProductEventLog.builder()
-                    .product(product)
-                    .hub(hub)
-                    .event(event)
-                    .eventTime(parsedEventTime)
-                    .build();
-
-            productEventLogRepo.save(eventLog);
-
-            // ✅ 이상 탐지 서비스 호출 (이상 발생 시 ProductEventLog와 함께 저장됨)
-            //AnomalyDetectionService.detectAnomalies(dummy, eventLog);
-
-        } catch (Exception e) {
-            log.error("❗ Error saving ProductEventLog: {}", e.getMessage());
-        }
-    }
-    
     /**
      * ✅ ProductEventLog -> ProductEventLogDTO 변환 (출력 JSON 맞춤)
      */
     private ProductEventLogDTO convertToDTO(ProductEventLog log) {
         return ProductEventLogDTO.builder()
-                .productEventLogId(log.getProductEventLogId()) // JSON `productEventLogId`와 매칭
-                .eventTime(log.getEventTime())
-                .epcCode(log.getProduct().getEpcCode())
-                .productName(log.getProduct().getProductName())
-                .eventType(log.getEvent().getEventType())
-                .hubType(log.getHub().getHubType())
-                .latitude(log.getHub().getLatitude())
-                .longitude(log.getHub().getLongitude())
-                .anomaly(log.getIsAnomaly()) // boolean 타입 유지
-                .build();
+            .productEventLogId(log.getProductEventLogId())
+            .eventTime(log.getEventTime())
+            .epcCode(log.getProduct().getEpcCode())
+            .productName(log.getProduct().getProductName())
+            .productSerial(log.getProduct().getProductSerial()) // 추가 확인
+            .eventType(log.getEvent().getEventType())
+            .hubType(log.getHub().getHubType())
+            .latitude(log.getHub().getLatitude())
+            .longitude(log.getHub().getLongitude())
+            .isAnomaly(log.getIsAnomaly())
+            .build();
     }
-    
+
+
     
     /**
      * 🚀 product_event_log_id 기준으로 페이징된 제품 이벤트 로그 조회
@@ -128,12 +76,17 @@ public class ProductEventLogService {
     @Transactional(readOnly = true)
     public Page<ProductEventLogDTO> getPagedLogs(Pageable pageable) {
         log.info("📡 제품 이벤트 로그 페이징 조회 요청: 페이지={}, 크기={}", pageable.getPageNumber(), pageable.getPageSize());
-//        Page<ProductEventLogDTO> pagedLogs = productEventLogRepo.findPagedProductEventLogs(pageable);
-//        log.info("✅ 제품 이벤트 로그 페이징 조회 완료: 총 {} 개", pagedLogs.getTotalElements());
-//        return pagedLogs;
-        return null;
+
+        try {
+            Page<ProductEventLogDTO> pagedLogs = productEventLogRepo.findPagedProductEventLogs(pageable);
+            log.info("✅ 제품 이벤트 로그 페이징 조회 완료: 총 {} 개", pagedLogs.getTotalElements());
+            return pagedLogs;
+        } catch (Exception e) {
+            log.error("❗ 페이징 조회 중 오류 발생: {}", e.getMessage(), e);
+            return Page.empty();
+        }
     }
-    
+
 
     /**
      * 🚀 특정 EPC 코드로 이벤트 로그 조회
@@ -179,11 +132,9 @@ public class ProductEventLogService {
     }
 
     /**
-     * 특정 EPC 코드의 제품 이동 경로 조회
-     * @param epcCode 제품의 EPC 코드
-     * @return 제품 이동 경로 리스트
+     * 🚀 특정 EPC 코드의 제품 이동 경로 조회 (DTO 변환)
      */
-    public List<Map<String, Object>> getProductMovement(String epcCode) {
+    public List<ProductEventLogDTO> getProductMovement(String epcCode) {
         log.info("🔍 제품 이동 경로 조회 요청: EPC 코드 = {}", epcCode);
 
         List<ProductEventLog> eventLogs = productEventLogRepo.findByProductEpcCodeOrderByEventTime(epcCode);
@@ -192,21 +143,11 @@ public class ProductEventLogService {
             return Collections.emptyList();
         }
 
-        List<Map<String, Object>> movementList = new ArrayList<>();
-        for (ProductEventLog log : eventLogs) {
-            Map<String, Object> eventData = new HashMap<>();
-            eventData.put("eventTime", log.getEventTime());
-            eventData.put("hubName", log.getHub().getHubType());
-            eventData.put("eventType", log.getEvent().getEventType());
-            eventData.put("latitude", log.getHub().getLatitude());
-            eventData.put("longitude", log.getHub().getLongitude());
-            movementList.add(eventData);
-        }
-
-        log.info("✅ 제품 이동 경로 조회 완료: 총 {} 개의 이벤트", movementList.size());
-        return movementList;
+        return eventLogs.stream()
+            .map(this::convertToDTO)
+            .toList();  // Java 17+ 사용 시 toList() 메서드 사용 가능
     }
-    
+
     /**
      * ✅ 날짜 문자열을 Date 타입으로 변환
      */

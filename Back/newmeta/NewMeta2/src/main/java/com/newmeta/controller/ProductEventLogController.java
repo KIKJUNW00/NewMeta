@@ -37,13 +37,13 @@ public class ProductEventLogController {
     /**
      * 🚀 페이징 처리된 데이터 반환
      */
-//    @GetMapping("/paged")
-//    public ResponseEntity<Page<ProductEventLogDTO>> getPagedLogs(
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "30") int size) {
-//        Pageable pageable = PageRequest.of(page, size);
-//        return ResponseEntity.ok(productEventLogService.getPagedLogs(pageable));
-//    }
+    @GetMapping("/paged")
+    public ResponseEntity<Page<ProductEventLogDTO>> getPagedLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(productEventLogService.getPagedLogs(pageable));
+    }
     
     
     /**

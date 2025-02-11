@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType; // 올바른 MediaType 임포트
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.newmeta.domain.dto.ProductEventLogDTO;
@@ -29,10 +30,12 @@ public class EpcSchedulde {
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	// CSV 파일 경로 (예: 설정 파일에서 주입 가능)
-	private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\더미/이상치데이터.csv";
+	private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\더미/정상데이터.csv";
 
 	// 현재 읽는 라인
 	private int currentLine = 0;
+	
+	private boolean allProcessed = false;  // 🚩 모든 데이터가 처리되었는지 확인하는 플래그
 	
 	private Date parseDate(String dateStr) {
         try {
@@ -122,7 +125,14 @@ public class EpcSchedulde {
 
 	            currentLine++; // 다음에 읽을 데이터 순서 처리
 	        } else {
-	            currentLine = 0; // 모든 라인을 처리한 후에는 처음으로 돌아갑니다.
+	            log.info("🚀 모든 데이터를 처리했습니다. 스케줄링을 중지합니다.");
+	            allProcessed = true;  // 모든 데이터 처리가 완료되었음을 표시
+	        }
+
+	        // 모든 데이터가 처리되었으면 스케줄링을 종료
+	        if (allProcessed) {
+	            ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+	            scheduler.shutdown();  // 스케줄링을 종료
 	        }
 	    }
 }
