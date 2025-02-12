@@ -30,7 +30,7 @@ public class EpcSchedulde {
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	// CSV 파일 경로 (예: 설정 파일에서 주입 가능)
-	private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\더미/정상데이터.csv";
+	private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\더미/이상치데이터2.csv";
 
 	// 현재 읽는 라인
 	private int currentLine = 0;

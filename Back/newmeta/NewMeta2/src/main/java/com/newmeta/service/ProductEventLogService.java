@@ -4,12 +4,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -17,6 +14,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.newmeta.domain.Event;
+import com.newmeta.domain.Hub;
+import com.newmeta.domain.Product;
 import com.newmeta.domain.ProductEventLog;
 import com.newmeta.domain.dto.ProductEventLogDTO;
 import com.newmeta.persistence.AnomalyLogRepository;
@@ -73,7 +73,6 @@ public class ProductEventLogService {
      * @param pageable 페이징 요청 객체
      * @return 페이징된 제품 이벤트 로그 목록 (DTO 형태)
      */
-    @Transactional(readOnly = true)
     public Page<ProductEventLogDTO> getPagedLogs(Pageable pageable) {
         log.info("📡 제품 이벤트 로그 페이징 조회 요청: 페이지={}, 크기={}", pageable.getPageNumber(), pageable.getPageSize());
 
@@ -91,7 +90,6 @@ public class ProductEventLogService {
     /**
      * 🚀 특정 EPC 코드로 이벤트 로그 조회
      */
-    @Transactional(readOnly = true)
     public Optional<ProductEventLog> findLogById(Long id) {
         return productEventLogRepo.findById(id);
     }
@@ -109,7 +107,6 @@ public class ProductEventLogService {
     /**
      * 🚀 모든 제품 이벤트 로그 조회
      */
-    @Transactional(readOnly = true)
     public List<ProductEventLog> findAllLogs() {
         return productEventLogRepo.findAll();
     }
@@ -117,7 +114,6 @@ public class ProductEventLogService {
     /**
      * 🚀 특정 EPC 코드로 제품 이벤트 로그 조회
      */
-    @Transactional(readOnly = true)
     public List<ProductEventLog> findLogsByEpcCode(String epcCode) {
         return productEventLogRepo.findByProductEpcCode(epcCode);
     }
@@ -181,6 +177,43 @@ public class ProductEventLogService {
     private Date convertToDate(Date date) {
         return date; // 이미 Date 타입이므로 변환 없이 반환
     }
+    
+    /**
+     * 🚀 ProductEventLog 생성 및 저장
+     */
+    public ProductEventLog createAndSaveEventLog(ProductEventLogDTO dto) {
+        Product product = productRepo.findById(dto.getEpcCode())
+                .orElse(Product.builder().epcCode(dto.getEpcCode()).productName(dto.getProductName()).build());
+
+        Event event = eventRepo.findByEventType(dto.getEventType())
+                .orElse(Event.builder().eventType(dto.getEventType()).build());
+
+        Hub hub = hubRepo.findById(dto.getHubType())
+                .orElse(Hub.builder().hubType(dto.getHubType()).latitude(dto.getLatitude()).longitude(dto.getLongitude()).build());
+
+        ProductEventLog productEventLog = ProductEventLog.builder()
+                .product(product)
+                .event(event)
+                .hub(hub)
+                .eventTime(dto.getEventTime())
+                .isAnomaly(false)
+                .build();
+
+        productEventLogRepo.save(productEventLog);
+        log.info("[ProductEventLogService] 이벤트 저장 완료: EPC={}, EventType={}", dto.getEpcCode(), dto.getEventType());
+        return productEventLog;
+    }
+
+    public List<ProductEventLog> findAllLogsByEpcCode(String epcCode) {
+        return productEventLogRepo.findAllByProduct_EpcCodeOrderByProductEventLogIdAsc(epcCode);
+    }
+
+    public void printRecentLogs(String epcCode) {
+        List<ProductEventLog> last10 = productEventLogRepo.findTop10ByProduct_EpcCodeOrderByProductEventLogIdDesc(epcCode);
+        log.info("[최근 10개 로그 출력] EPC={}", epcCode);
+        last10.forEach(logItem -> log.info(" - {}", logItem));
+    }
+
 
     
 }

@@ -1,12 +1,16 @@
 package com.newmeta.service; // 📌 서비스 클래스가 속한 패키지를 선언
 
+import java.util.Collections;
 import java.util.Date; // ✅ 날짜 범위 조회를 위한 Date 클래스 임포트
 import java.util.List; // ✅ 리스트 데이터를 다루기 위한 List 임포트
+
 import org.springframework.data.domain.Page; // ✅ 페이징 처리를 위한 Page 객체 임포트
 import org.springframework.data.domain.Pageable; // ✅ 페이징 요청 정보를 담는 Pageable 객체 임포트
 import org.springframework.stereotype.Service; // ✅ 스프링의 서비스 컴포넌트로 등록하기 위한 어노테이션 임포트
 
 import com.newmeta.domain.AnomalyLog; // ✅ 이상 탐지 로그 엔티티 클래스 임포트
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.domain.dto.AnomalyDTO;
 import com.newmeta.persistence.AnomalyLogRepository; // ✅ 이상 탐지 로그 저장소 인터페이스 임포트
 
 import lombok.RequiredArgsConstructor; // ✅ final 필드에 대한 생성자를 자동 생성하는 Lombok 어노테이션
@@ -23,6 +27,9 @@ public class AnomalyLogService {
 
     // ✅ JPA Repository 의존성 주입 (이상 탐지 데이터 관리)
     private final AnomalyLogRepository anomalyLogRepo;
+    
+    private final WebSocketService webSocketService;
+
     /**
      * 🚀 **모든 이상 탐지 데이터 조회 (페이징 포함)**
      * ✅ 페이징된 이상 탐지 로그 목록을 반환
@@ -58,4 +65,41 @@ public class AnomalyLogService {
         anomalyLogRepo.deleteById(anomalyId);
         log.info("🗑️ 이상 탐지 로그 삭제 완료: anomalyId={}", anomalyId);
     }
+    
+    public void saveAnomalyLog(ProductEventLog eventLog, String anomalyType, String reason) {
+        if (anomalyLogRepo.existsByEpcCodeAndEventTime(eventLog.getProduct().getEpcCode(), eventLog.getEventTime())) {
+            log.warn("🚨 중복된 이상 탐지 로그: EPC={}, Timestamp={}", eventLog.getProduct().getEpcCode(), eventLog.getEventTime());
+            return;
+        }
+
+        eventLog.setIsAnomaly(true);
+        AnomalyLog anomalyLog = anomalyLogRepo.save(
+                AnomalyLog.builder()
+                        .productEventLog(eventLog)
+                        .anomalyType(anomalyType)
+                        .reason(reason)
+                        .build()
+        );
+
+        log.info("✅ 이상 탐지 로그 저장 완료: EPC={}, 유형={}", eventLog.getProduct().getEpcCode(), anomalyType);
+
+        // WebSocket 전송
+        webSocketService.sendAnomalyAlert(Collections.singletonList(convertToDTO(eventLog, anomalyType, reason)));
+    }
+
+    private AnomalyDTO convertToDTO(ProductEventLog eventLog, String anomalyType, String reason) {
+        return AnomalyDTO.builder()
+                .epcCode(eventLog.getProduct().getEpcCode())
+                .productName(eventLog.getProduct().getProductName())
+                .eventType(eventLog.getEvent().getEventType())
+                .hubType(eventLog.getHub().getHubType())
+                .latitude(eventLog.getHub().getLatitude())
+                .longitude(eventLog.getHub().getLongitude())
+                .anomalyType(anomalyType)
+                .reason(reason)
+                .anomalyTimestamp(eventLog.getEventTime())
+                .build();
+    }
+    
+    
 }

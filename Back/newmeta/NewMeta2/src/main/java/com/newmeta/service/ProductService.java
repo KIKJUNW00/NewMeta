@@ -93,19 +93,4 @@ public class ProductService {
         productRepo.deleteById(epcId);
     }
 
-//    /**
-//     * 🚀 **제품이 존재하지 않으면 저장하고, 존재하면 기존 값을 반환**
-//     * ✅ EPC 코드 기준으로 제품을 조회 후, 없으면 새로 저장
-//     * @param epcCode 제품의 EPC 코드
-//     * @param productName 제품명
-//     * @return 저장된 또는 기존 제품 객체 반환
-//     */
-//    public Product saveIfNotExists(String epcCode, Long productSerial,String productName) {
-//        log.info("🔍 [제품 존재 여부 확인] EPC 코드: {}", epcCode);
-//        return productRepo.findById(epcCode)
-//                .orElseGet(() -> {
-//                    log.info("🆕 [신규 제품 저장] EPC 코드: {}, 제품명: {}", epcCode, productSerial, productName);
-//                    return productRepo.save(new Product(epcCode, productSerial,productName));
-//                });
-//    }
 }

@@ -22,9 +22,9 @@ public class AnomalyDTO {
     private String reason;
     
     private String epcCode;
-    private String productName;        // 필드명 개선 (anomalyProductName → productName)
-    private String eventType;          // 필드명 개선 (anomalyEventType → eventType)
-    private String hubType;            // 필드명 개선 (anomalyHub → hubType)
+    private String productName;        
+    private String eventType;          
+    private String hubType;            
     private Double latitude;
     private Double longitude;
     private Date anomalyTimestamp;

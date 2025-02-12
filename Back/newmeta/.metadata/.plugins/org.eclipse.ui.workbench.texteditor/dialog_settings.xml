@@ -3,6 +3,7 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="true"/>
 	<list key="searchhistory">
+		<item value="HubName"/>
 		<item value="jackson-databind"/>
 		<item value="fasterxml"/>
 		<item value="isImportedFirstEventValid"/>
@@ -18,6 +19,7 @@
 		<item value="isDomesticProduct"/>
 	</list>
 	<list key="replacehistory">
+		<item value="HubType"/>
 		<item value="anomalyLogRepo"/>
 		<item value="anomalyLogRepository"/>
 	</list>
