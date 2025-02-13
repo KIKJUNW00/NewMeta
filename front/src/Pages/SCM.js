@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BoardSCM } from '../Util/SCMarchiUtil/SCMBoard';
 import SCMarchi from '../Util/SCMarchiUtil/SCMarchi1';
+import HubData from '../Util/SCMarchiUtil/HubData'
 
 export default function SCMDashboard() {
   const [selectedEpcCode, setSelectedEpcCode] = useState(null);
@@ -14,9 +15,9 @@ export default function SCMDashboard() {
   };
 
   return (
-    <div className="h-screen bg-gray-100 p-4">
+    <div className="h-screen overflow-auto bg-gray-100 p-4">
       {/* 메인 대시보드 영역 */}
-      <div className="bg-white w-full h-full shadow-lg p-6 flex flex-col ">
+      <div className="h-full  overflow-auto bg-white shadow-lg p-6 flex flex-col">
         <div className="flex flex-1">
           {/* 왼쪽 필터/제품 카테고리 영역 */}
           <div className="w-[35%] border border-gray-300 bg-gray-50 p-4 mr-4 rounded min-h-[650px] max-h-[650px] flex-shrink-0">
@@ -48,31 +49,9 @@ export default function SCMDashboard() {
         {/* 하단 그래프 영역 */}
         <div className="flex mt-4 flex-1">
           <div className="w-full h-full lg:w-1/3 px-2 mb-4 flex-1">
-            <div className="border border-gray-300 bg-gray-50 p-4 rounded h-full">
-              <h2 className="text-lg font-bold text-gray-700 mb-2">그래프 1</h2>
-              <div className="flex-1 flex justify-center items-center h-full">
-                <p>차트 영역</p>
-              </div>
-            </div>
+            <HubData />
           </div>
 
-          <div className="w-full h-full lg:w-1/3 px-2 mb-4 flex-1">
-            <div className="border  border-gray-300 bg-gray-50 p-4 rounded h-full">
-              <h2 className="text-lg font-bold text-gray-700 mb-2">그래프 2</h2>
-              <div className="flex-1 flex justify-center items-center h-full">
-                <p>차트 영역</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full h-full lg:w-1/3 px-2 mb-4 flex-1">
-            <div className="border border-gray-300 bg-gray-50 p-4 rounded h-full">
-              <h2 className="text-lg font-bold text-gray-700 mb-2">허브별 이상치 그래프</h2>
-              <div className="flex-1 flex justify-center items-center h-full">
-                <p>허브 이상치 차트 영역</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

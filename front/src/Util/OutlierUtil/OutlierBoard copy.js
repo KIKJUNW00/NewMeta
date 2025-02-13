@@ -1,16 +1,14 @@
-import React, { useState, useEffect, useContext  } from "react";
+import React, { useState, useEffect } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import AnomalyModal from "./AnomalyModal";
-import { AnomalyContext } from "./AnomalyContext";
 
-export default function OutlierBoard() {
+export default function OutlierBoard({ setNewAnomaly }) {
   //  상태 변수 선언: productData는 REST API와 STOMP(WebSocket)를 통해 받아온 이상치 데이터, currentPage는 현재 페이지 번호
   const [productData, setProductData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAnomalies, setSelectedAnomalies] = useState([]);
-  const { setNewAnomaly } = useContext(AnomalyContext);
   const ITEMS_PER_PAGE = 5;
 
   //  컴포넌트 마운트 시 REST API를 호출하여 초기 이상치 데이터를 가져옴
@@ -36,36 +34,33 @@ export default function OutlierBoard() {
 
   // SockJS와 STOMP를 이용한 WebSocket 연결을 통한 실시간 이상 탐지 데이터 수신
 
-  // OutlierBoard.js
-useEffect(() => {
-  const socket = new SockJS("http://10.125.121.228:8080/ws-stomp");
-  const stompClient = new Client({
-    webSocketFactory: () => socket,
-    reconnectDelay: 5000,
-    onConnect: () => {
-      console.log("STOMP WebSocket connection established.");
-      stompClient.subscribe("/topic/anomalyAlerts", (message) => {
-        console.log("STOMP message received:", message.body);
-        try {
-          const newEvent = JSON.parse(message.body);
-          if (Array.isArray(newEvent) && newEvent.length > 0) {
-            setProductData((prevData) => [newEvent[0], ...prevData]);
-            setNewAnomaly(true);  // Update newAnomaly to true
+  useEffect(() => {
+    const socket = new SockJS("http://10.125.121.228:8080/ws-stomp");
+    const stompClient = new Client({
+      webSocketFactory: () => socket,
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log("STOMP WebSocket connection established.");
+        stompClient.subscribe("/topic/anomalyAlerts", (message) => {
+          console.log("STOMP message received:", message.body);
+          try {
+            const newEvent = JSON.parse(message.body);
+            setProductData((prevData) => [newEvent, ...prevData]);
+            setNewAnomaly(true);  // 새로운 이상치가 들어오면 Sidebar에 표시
+          } catch (err) {
+            console.error("Error parsing STOMP message:", err);
           }
-        } catch (err) {
-          console.error("Error parsing STOMP message:", err);
-        }
-      });
-    },
-    onStompError: (frame) => {
-      console.error("STOMP error:", frame);
-    },
-  });
-  stompClient.activate();
-
-  return () => stompClient.deactivate();
-}, [setNewAnomaly]);
-
+        });
+      },
+      onStompError: (frame) => {
+        console.error("STOMP error:", frame);
+      },
+    });
+    stompClient.activate();
+    return () => {
+      stompClient.deactivate();
+    };
+  }, [setNewAnomaly]);
 
   //  전체 페이지 수 계산
   const totalPages = Math.ceil((productData.length || 1) / ITEMS_PER_PAGE);

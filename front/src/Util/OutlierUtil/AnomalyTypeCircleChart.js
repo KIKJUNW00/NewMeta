@@ -14,7 +14,7 @@ const anomalyTypes = [
 const AnomalyTypeCircleChart = () => {
   const [anomalyCounts, setAnomalyCounts] = useState({});
 
-  const API_URL = 'http://10.125.121.228:8080/anomalies';
+  const API_URL = 'http://10.125.121.228:8080/anomalies/paged';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,13 +24,13 @@ const AnomalyTypeCircleChart = () => {
 
         const typeCounts = {};
 
-        // ✅ anomalyType별로 데이터 집계
+        //  anomalyType별로 데이터 집계
         data.forEach((item) => {
           const type = item.anomalyType;
           typeCounts[type] = (typeCounts[type] || 0) + 1;
         });
 
-        // ✅ 7개의 anomalyType을 기준으로 없는 값은 0으로 채움
+        //  7개의 anomalyType을 기준으로 없는 값은 0으로 채움
         const fullTypeCounts = anomalyTypes.reduce((acc, type) => {
           acc[type] = typeCounts[type] || 0;
           return acc;
@@ -47,9 +47,9 @@ const AnomalyTypeCircleChart = () => {
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {anomalyTypes.map((type, index) => (
-          <div key={index} className="flex flex-col items-center">
+          <div key={index} className="flex flex-col items-center bg-white p-4 rounded shadow">
             <div className="relative w-16 h-16">
               <svg className="w-16 h-16">
                 <circle
@@ -70,7 +70,7 @@ const AnomalyTypeCircleChart = () => {
                   r="24"
                   cx="50%"
                   cy="50%"
-                  strokeDasharray="150" // ✅ 반지름 r=24일 때 전체 둘레 약 150
+                  strokeDasharray="150" //  반지름 r=24일 때 전체 둘레 약 150
                   strokeDashoffset={150 - (150 * (anomalyCounts[type] || 0)) / 10} // 비율 애니메이션
                 />
               </svg>

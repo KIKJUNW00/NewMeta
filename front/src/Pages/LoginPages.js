@@ -57,6 +57,9 @@ export default function Login() {
         // JWT 토큰을 로컬 스토리지에 저장
         localStorage.setItem('authToken', jwtToken);
 
+        // username을 로컬 스토리지에 저장
+        localStorage.setItem('username', user.username);
+
 
         // 토큰이 성공적으로 저장되었음을 콘솔에 출력
         // console.log("JWT 토큰:", jwtToken);

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import MapComponent from '../Util/DashBoardUtil/MapComponent';
 import MapComponent2 from '../Util/DashBoardUtil/MapComponent2'
-import Chart1 from '../Util/DashBoardUtil/Chart1'
-import CircleLegend from '../Util/DashBoardUtil/CircleLegend';
+// import Chart1 from '../Util/DashBoardUtil/Chart1'
+// import CircleLegend from '../Util/DashBoardUtil/CircleLegend';
 import { Board } from '../Util/DashBoardUtil/Boards';
 import { BoardX } from '../Util/DashBoardUtil/Boards'
 
@@ -41,7 +41,7 @@ export default function DashBoard() {
 
 
   return (
-    <div className="h-screen bg-gray-100 flex items-center justify-center">
+    <div className="h-screen bg-gray-100 flex items-center justify-center ">
       {/* 전체 배경 */}
       <div className="bg-white w-[98%] h-[97%] shadow-lg p-4 flex flex-col space-y-4">
         {/* 윗 섹션 */}
@@ -53,9 +53,9 @@ export default function DashBoard() {
             <div className='w-full h-full flex flex-col'>
               <div className='flex justify-between pb-2'>
                 <h2 className="text-lg font-bold text-gray-700">HUB별 물품량</h2>
-                <div className="flex flex-col space-y-2">
+                {/* <div className="flex flex-col space-y-2">
                   <CircleLegend />
-                </div>
+                </div> */}
               </div>
               <div className="flex border-solid border border-black
                               overflow-hidden">
@@ -68,8 +68,8 @@ export default function DashBoard() {
           <div className="flex-1 border-solid border border-black
                         bg-gray-50 p-4 shadow">
             <h2 className="text-lg font-bold text-gray-700">날짜별 이상치</h2>
-
-            <Chart1 />
+                    
+            {/* <Chart1 /> */}
           </div>
 
         </div>

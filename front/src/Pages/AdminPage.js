@@ -5,6 +5,8 @@ import { Routes, Route } from 'react-router-dom';
 import DashBoard from '../Pages/DashBoard';
 import SCM from './SCM'
 import Outlier from './Outlier'
+import MyPage from './MyPage';
+import { AnomalyProvider } from '../Util/OutlierUtil/AnomalyContext';
 
 export default function AdminPage() {
 
@@ -32,32 +34,39 @@ export default function AdminPage() {
   // -------------------------------------------------------------------------
 
   return (
-    <div className='h-screen bg-white flex'>
-      {/* Sidebar */}
-      <div className='h-full w-1/12 
+    <AnomalyProvider>
+
+      <div className='h-screen bg-white flex'>
+        {/* Sidebar */}
+        <div className='h-full w-1/12 
                       bg-[#2e3b4e]'>
-        <Sidebar />
-      </div>
+          <Sidebar />
 
-      {/* 메인 컨텐츠 */}
-      <div className='flex flex-col w-full h-full'>
-
-        {/* 컨텐츠 스크린 */}
-        <div className='flex-1 h-full
-                       bg-gray-200 overflow-auto '>
-
-          <Routes>
-            {/* 다른 경로도 필요하면 여기에 추가 */}
-            <Route path="dashboard" element={<DashBoard />} />
-            <Route path="scm" element={<SCM />} />
-            <Route path="outlier" element={<Outlier />} />
-          </Routes>
         </div>
 
+        {/* 메인 컨텐츠 */}
+        <div className='flex flex-col w-full h-full'>
+
+          {/* 컨텐츠 스크린 */}
+          <div className='flex-1 h-full
+                       bg-gray-200 overflow-auto '>
+
+            <Routes>
+              {/* 다른 경로도 필요하면 여기에 추가 */}
+              <Route path="dashboard" element={<DashBoard />} />
+              <Route path="scm" element={<SCM />} />
+              {/* Outlier에 newAnomaly와 setNewAnomaly 전달 */}
+              <Route path="outlier" element={<Outlier />} />
+              <Route path="mypage" element={<MyPage />} />
+
+            </Routes>
+          </div>
+
+        </div>
+
+
+
       </div>
-
-
-
-    </div>
+    </AnomalyProvider>
   )
 }

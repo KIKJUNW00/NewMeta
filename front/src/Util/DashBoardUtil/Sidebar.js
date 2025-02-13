@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import logo1 from '../../img/logo1.png';
 import logout from '../../img/logout.png';
 import Clock from '../DashBoardUtil/Clock';
+import { AnomalyContext } from '../OutlierUtil/AnomalyContext';
 
 export default function Sidebar() {
+
+  const { newAnomaly, setNewAnomaly } = useContext(AnomalyContext);
 
   const navigate = useNavigate();
 
@@ -65,12 +68,13 @@ export default function Sidebar() {
                       text-white'>
 
         {user.username ? `${user.username}` : ''}
-     
+
       </div>
 
 
       {/* 중간 메뉴 */}
       <div className="flex-1">
+        
         {/* 1번 컨텐츠 */}
         <div className="bg-[#2e3b4e] transition-colors hover:bg-[#3a4a63] flex items-center w-full h-16">
           <NavLink
@@ -114,13 +118,34 @@ export default function Sidebar() {
                 ? 'bg-[#3a4a63] w-full h-full flex items-center justify-center'
                 : 'w-full h-full flex items-center justify-center'
             }
+            onClick={() => setNewAnomaly(false)}
+          >
+            <div className="relative flex items-center">
+              <p className="text-white text-xl">
+                이상치
+                {newAnomaly && <span className="ml-2 text-red-500 font-bold">!</span>}
+              </p>
+            </div>
+          </NavLink>
+
+        </div>
+
+        <div className="bg-[#2e3b4e] transition-colors hover:bg-[#3a4a63] flex items-center w-full h-16">
+          <NavLink
+            to="/AdminPage/mypage"
+            className={({ isActive }) =>
+              isActive
+                ? 'bg-[#3a4a63] w-full h-full flex items-center justify-center'
+                : 'w-full h-full flex items-center justify-center'
+            }
           >
             <p className='text-white  text-xl'
             >
-              이상치
+              마이페이지
             </p>
           </NavLink>
         </div>
+
       </div>
 
       {/* 로그아웃 */}
