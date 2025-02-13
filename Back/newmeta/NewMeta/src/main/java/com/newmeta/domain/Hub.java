@@ -21,17 +21,9 @@ import lombok.ToString;
 public class Hub {
 	
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY) // 기본 키 자동 생성 설정
-	private Long hubId;
-	private String hubName;
+	private String hubType;
 	private Double latitude; // 위도
 	private Double longitude; // 경도
 
 	
-	// ✅ [추가] String, double, double을 지원하는 생성자 추가
-    public Hub(String hubName, Double latitude, Double longitude) {
-        this.hubName = hubName;
-        this.latitude = latitude;
-        this.longitude = longitude;
-    }
 }

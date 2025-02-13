@@ -37,33 +37,9 @@ public class AnomalyLog {
     
     private String reason; // 이상치 판별 사유
     
-    private String epcCode; // EPC 코드
-    
-    @Column(name = "anomaly_product_name")
-    private String anomalyProductName;  // 이상치 제품명
-    
-    private Double latitude; // 위도
-    
-    private Double longitude; // 경도
-
-    @Column(name = "anomaly_timestamp",columnDefinition = "DATETIME")
-    @Temporal(TemporalType.TIMESTAMP) // Date 타입 지정
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
-    private Date anomalyTimestamp;
-    
-    @Column(name = "anomaly_hub")
-    private String anomalyHub; // 이상치 발생 허브 정보
-    
-    @Column(name = "anomaly_event_type")
-    private String anomalyEventType; // 이상치 발생 이벤트 유형
-
-//    @OneToOne(mappedBy = "anomalyLog", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-//    @JsonIgnore
-//    private ProductEventLog productEventLog;
-    
     @OneToOne
-    @JsonIgnore
     @JoinColumn(name = "product_event_log_id")
     private ProductEventLog productEventLog;
+
 
 }

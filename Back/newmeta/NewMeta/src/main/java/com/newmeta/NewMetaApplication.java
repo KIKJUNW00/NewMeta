@@ -6,10 +6,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-public class NewMetaApplication {
+public class NewMeta2Application {
 
 	public static void main(String[] args) {
-		SpringApplication.run(NewMetaApplication.class, args);
+		SpringApplication.run(NewMeta2Application.class, args);
 	}
 
 }

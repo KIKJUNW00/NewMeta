@@ -19,20 +19,6 @@ public class EventService {
 
     // ✅ Event 엔터티를 관리하는 JPA 저장소
     private final EventRepository eventRepo;
-
-    /**
-     * 🚀 **이벤트가 존재하지 않으면 저장하고, 존재하면 기존 값을 반환**
-     * ✅ 이벤트 유형(eventType)으로 기존 데이터 조회 후, 없으면 새로 저장
-     * @param eventType 저장할 이벤트 유형
-     * @return 저장된 Event 객체
-     */
-    public Event saveIfNotExists(String eventType) {
-        return eventRepo.findByEventType(eventType) // ✅ 해당 eventType이 존재하는지 조회
-                .orElseGet(() -> eventRepo.save(Event.builder() // ✅ 존재하지 않으면 새로 저장
-                        .eventType(eventType)
-                        .build()));
-    }
-
     /**
      * 🚀 **특정 이벤트 유형으로 이벤트 조회**
      * ✅ 이벤트 유형을 기준으로 Event 객체 조회

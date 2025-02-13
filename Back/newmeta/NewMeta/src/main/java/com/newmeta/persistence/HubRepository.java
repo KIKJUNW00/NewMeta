@@ -5,13 +5,11 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.newmeta.domain.Hub;
+import com.newmeta.domain.Product;
 
-public interface HubRepository extends JpaRepository<Hub, Long> {
-	
-	Optional<Hub> findByHubNameAndLatitudeAndLongitude(String hubName, Double latitude, Double longitude);
+public interface HubRepository extends JpaRepository<Hub, String> {
 
-	// 허브 이름으로 조회
-    Optional<Hub> findByHubName(String hubName);
-    
+	Optional<Product> findByHubType(String hubType);
+
 
 }

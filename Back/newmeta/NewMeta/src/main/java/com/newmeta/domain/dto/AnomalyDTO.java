@@ -16,15 +16,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor  // ✅ 이미 모든 필드를 포함한 생성자를 자동으로 생성함 (중복 생성자 필요 없음)
 public class AnomalyDTO {
 
+
     private Long anomalyId;
     private String anomalyType;
     private String reason;
+    
     private String epcCode;
-    private String anomalyProductName;
-    private String anomalyEventType;
-    private String anomalyHub;
+    private String productName;        
+    private String eventType;          
+    private String hubType;            
     private Double latitude;
     private Double longitude;
     private Date anomalyTimestamp;
-
 }

@@ -62,7 +62,6 @@ public class SecurityConfig { // 보안 설정 클래스
          * 🚀 CORS 설정 (Cross-Origin Resource Sharing 허용)
          * ✅ 클라이언트(React 등)에서 서버 API를 호출할 수 있도록 설정
          */
-        http.cors().and();
 
         /**
          * 🚀 접근 거부 시 이동할 페이지 설정

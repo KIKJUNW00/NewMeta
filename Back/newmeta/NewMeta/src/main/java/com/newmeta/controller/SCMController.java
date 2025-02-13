@@ -21,10 +21,6 @@ import com.newmeta.service.WebSocketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * 📡 SCM 관련 데이터를 제공하는 컨트롤러
- * ✅ 실시간 물류 데이터 및 이상 탐지 정보를 제공
- */
 @Slf4j
 @RestController
 @RequestMapping("/scm")
@@ -33,37 +29,32 @@ public class SCMController {
 
     private final SCMDataService scmDataService;
     private final WebSocketService webSocketService;
-    private final ProductEventLogRepository productEventLogRepository; // ✅ 의존성 주입
+    private final ProductEventLogRepository productEventLogRepository;
 
-    
-    
     /**
      * 🚀 [SCM 데이터 조회] - 필터링 추가
      */
     @GetMapping("/data")
     public ResponseEntity<List<Map<String, Object>>> getSCMData(
             @RequestParam(required = false) String eventType,
-            @RequestParam(required = false) String hubName,
+            @RequestParam(required = false) String hubType,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        log.info("📡 SCM 데이터 조회 요청: eventType={}, hubName={}, startDate={}, endDate={}",
-                eventType, hubName, startDate, endDate);
-        return ResponseEntity.ok(scmDataService.getFilteredSCMData(eventType, hubName, startDate, endDate));
+        log.info("📡 SCM 데이터 조회 요청: eventType={}, hubType={}, startDate={}, endDate={}", eventType, hubType, startDate, endDate);
+        return ResponseEntity.ok(scmDataService.getFilteredSCMData(eventType, hubType, startDate, endDate));
     }
 
     /**
-     * 🚀 [제품 상세 이동 경로 조회 API] 
+     * 🚀 [제품 상세 이동 경로 조회 API]
      */
     @GetMapping("/product-movement/{epcCode}")
     public ResponseEntity<List<ProductEventLogDTO>> getProductMovement(@PathVariable String epcCode) {
         log.info("📡 제품 이동 경로 조회 요청: epcCode={}", epcCode);
-
         List<ProductEventLogDTO> movementList = scmDataService.getProductMovement(epcCode);
         if (movementList.isEmpty()) {
             log.warn("⚠️ 제품 이동 경로 없음: epcCode={}", epcCode);
             return ResponseEntity.noContent().build();
         }
-
         return ResponseEntity.ok(movementList);
     }
 
@@ -73,26 +64,22 @@ public class SCMController {
     @GetMapping("/tracking/{epcCode}")
     public ResponseEntity<List<ProductEventLogDTO>> trackProductMovement(@PathVariable String epcCode) {
         log.info("📡 특정 EPC 코드 이동 경로 조회: {}", epcCode);
-        List<ProductEventLogDTO> movementLogs = scmDataService.trackProductMovement(epcCode);
-        return ResponseEntity.ok(movementLogs);
+        return ResponseEntity.ok(scmDataService.trackProductMovement(epcCode));
     }
-    
-//    **
-//    * 🚀 [이상 탐지 데이터 조회 API]
-//    */
-   @GetMapping("/anomalies")
-   public ResponseEntity<List<ProductEventLogDTO>> getAnomalies() {
-       log.info("📡 이상 탐지 데이터 조회 요청");
-       
-       List<ProductEventLogDTO> anomalies = scmDataService.getAnomalyData(); // ✅ 서비스에서 데이터 가져오기
 
-       if (anomalies.isEmpty()) {
-           log.warn("⚠️ 이상 탐지 데이터 없음");
-           return ResponseEntity.noContent().build();
-       }
-
-       return ResponseEntity.ok(anomalies);
-   }
+    /**
+     * 🚀 [이상 탐지 데이터 조회 API]
+     */
+    @GetMapping("/anomalies")
+    public ResponseEntity<List<ProductEventLogDTO>> getAnomalies() {
+        log.info("📡 이상 탐지 데이터 조회 요청");
+        List<ProductEventLogDTO> anomalies = scmDataService.getAnomalyData();
+        if (anomalies.isEmpty()) {
+            log.warn("⚠️ 이상 탐지 데이터 없음");
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(anomalies);
+    }
 
     /**
      * 🚀 [HUB별 물류량 조회 API]
@@ -127,14 +114,13 @@ public class SCMController {
     @GetMapping("/latest-event/{epcCode}")
     public ResponseEntity<ProductEventLogDTO> getLatestProductEventLog(@PathVariable String epcCode) {
         log.info("📡 최신 이벤트 로그 조회 요청: epcCode={}", epcCode);
-
-        return productEventLogRepository.findByProductEpcCode(epcCode).stream() // ✅ 인스턴스 객체에서 메서드 호출
+        return productEventLogRepository.findByProductEpcCode(epcCode).stream()
                 .max(Comparator.comparing(ProductEventLog::getEventTime))
                 .map(this::convertProductEventLogToDTO)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    
+
     /**
      * ✅ [ProductEventLog → DTO 변환 메서드]
      */
@@ -143,21 +129,11 @@ public class SCMController {
                 .epcCode(log.getProduct().getEpcCode())
                 .productName(log.getProduct().getProductName())
                 .eventType(log.getEvent().getEventType())
-                .hubName(log.getHub().getHubName())
+                .hubType(log.getHub().getHubType())
                 .eventTime(log.getEventTime())
                 .latitude(log.getHub().getLatitude())
                 .longitude(log.getHub().getLongitude())
                 .build();
-    }
-
-    /**
-     * 🚀 [허브별 실시간 물류 데이터 조회]
-     */
-    @GetMapping("/hub-wise-data")
-    public ResponseEntity<Map<String, Object>> getHubWiseSCMData() {
-        log.info("📡 허브별 실시간 물류 데이터 조회 요청");
-        Map<String, Object> hubWiseData = scmDataService.getSCMData();
-        return ResponseEntity.ok(hubWiseData);
     }
 
     /**
@@ -167,18 +143,6 @@ public class SCMController {
     public ResponseEntity<Void> sendHubWiseDataToWebSocket() {
         log.info("📡 허브별 데이터 WebSocket 전송 요청");
         scmDataService.sendHubWiseDataToWebSocket();
-        log.info("✅ WebSocket - 허브별 데이터 전송 완료!");
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * 🚀 [WebSocket을 통해 실시간 SCM 데이터 전송]
-     */
-    @PostMapping("/data/websocket")
-    public ResponseEntity<Void> sendSCMDataToWebSocket() {
-        log.info("📡 SCM 데이터 WebSocket 전송 요청");
-        scmDataService.sendSCMDataToWebSocket();
-        log.info("✅ WebSocket - SCM 데이터 전송 완료!");
         return ResponseEntity.ok().build();
     }
 
@@ -189,7 +153,6 @@ public class SCMController {
     public ResponseEntity<Void> sendAnomalyDataToWebSocket() {
         log.info("📡 이상 탐지 데이터 WebSocket 전송 요청");
         scmDataService.sendAnomalyDataToWebSocket();
-        log.info("✅ WebSocket - 이상 탐지 데이터 전송 완료!");
         return ResponseEntity.ok().build();
     }
 }

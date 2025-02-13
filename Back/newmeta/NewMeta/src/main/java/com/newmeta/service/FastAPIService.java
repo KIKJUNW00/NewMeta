@@ -100,7 +100,7 @@ public class FastAPIService {
         data.put("epc_code", event.getProduct().getEpcCode());
         data.put("product_serial", String.valueOf(event.getProduct().getProductSerial()));
         data.put("product_name", event.getProduct().getProductName());
-        data.put("hub_type", event.getHub().getHubName());
+        data.put("hub_type", event.getHub().getHubType());
         data.put("event_type", event.getEvent().getEventType());
         data.put("event_time", dateFormat.format(event.getEventTime()));
         return data;

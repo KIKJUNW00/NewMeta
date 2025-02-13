@@ -1,6 +1,8 @@
 package com.newmeta.domain;
 
 import java.util.Date; // 기존: Date 사용
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -37,9 +39,11 @@ public class ProductEventLog {
 	private Event event;
 
 	@ManyToOne(cascade = CascadeType.PERSIST)
-	@JoinColumn(name = "hub_id")
+	@JoinColumn(name = "hub_type")
 	@JsonIgnore
 	private Hub hub;
+
+
 	
 
 	
