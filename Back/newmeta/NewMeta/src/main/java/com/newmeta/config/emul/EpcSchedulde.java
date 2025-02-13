@@ -13,13 +13,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType; // 올바른 MediaType 임포트
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.newmeta.domain.dto.ProductEventLogDTO;
 
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Mono;
 
 @Configuration
 @Slf4j
@@ -30,7 +28,7 @@ public class EpcSchedulde {
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	// CSV 파일 경로 (예: 설정 파일에서 주입 가능)
-	private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\더미/이상치데이터2.csv";
+	private static final String FILE_PATH = "C:\\Users\\user\\Desktop\\더미/실험데이터(120,50).csv";
 
 	// 현재 읽는 라인
 	private int currentLine = 0;
@@ -98,41 +96,37 @@ public class EpcSchedulde {
 			log.error("❌ CSV 파일 읽기 오류: {}", e.getMessage());
 		}
 	}
-	 @Scheduled(fixedRate = 1000)
-	    public void processCsvLinesBatch() {
-	        // 현재 읽고 있는 라인에 대한 처리를 합니다.
-	        if (currentLine < csv.size()) {
-	            ProductEventLogDTO eventLog = csv.get(currentLine);
-	            
-	            // WebClient를 사용하여 데이터 전송
-	            WebClient client = WebClient.builder()
-	                    .baseUrl("http://localhost:8081")
-	                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-	                    .build();
-
-	            // API에 POST 요청
-	            Mono<Void> response = client.post()
-	                    .uri("/report") // 실제 API 엔드포인트로 변경
-	                    .bodyValue(eventLog) // DTO 객체를 JSON으로 변환하여 전송
-	                    .retrieve()
-	                    .bodyToMono(Void.class);
-
-	            response.subscribe(
-	                null, 
-	                error -> log.error("❌ 데이터 전송 중 오류: {}", error.getMessage()), 
-	                () -> log.info("✅ 데이터 전송 성공: {}", eventLog)
-	            );
-
-	            currentLine++; // 다음에 읽을 데이터 순서 처리
-	        } else {
-	            log.info("🚀 모든 데이터를 처리했습니다. 스케줄링을 중지합니다.");
-	            allProcessed = true;  // 모든 데이터 처리가 완료되었음을 표시
-	        }
-
-	        // 모든 데이터가 처리되었으면 스케줄링을 종료
-	        if (allProcessed) {
-	            ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-	            scheduler.shutdown();  // 스케줄링을 종료
-	        }
+//	@Scheduled(fixedRate = 50)
+	public void processCsvLinesBatch() {
+	    if (allProcessed) {
+	        return;  // 모든 데이터가 처리되었으면 더 이상 실행하지 않음
 	    }
+
+	    if (currentLine < csv.size()) {
+	        ProductEventLogDTO eventLog = csv.get(currentLine);
+	        
+	        // WebClient를 사용하여 데이터 전송
+	        WebClient client = WebClient.builder()
+	                .baseUrl("http://localhost:8080")
+	                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+	                .build();
+
+	        // API에 POST 요청
+	        client.post()
+	                .uri("/report")
+	                .bodyValue(eventLog)
+	                .retrieve()
+	                .bodyToMono(Void.class)
+	                .subscribe(
+	                        success -> log.info("✅ 데이터 전송 성공: {}", eventLog),
+	                        error -> log.error("❌ 데이터 전송 중 오류: {}", error.getMessage())
+	                );
+
+	        currentLine++;  // 다음 라인으로 이동
+	    } else {
+	        log.info("🚀 모든 데이터를 처리했습니다. 스케줄링을 중지합니다.");
+	        allProcessed = true;  // 모든 데이터 처리가 완료되었음을 표시
+	    }
+	}
+
 }

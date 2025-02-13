@@ -1,0 +1,149 @@
+package com.newmeta.controller;
+
+import java.text.ParseException;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.newmeta.domain.ProductEventLog;
+import com.newmeta.domain.dto.ProductEventLogDTO;
+import com.newmeta.service.ProductEventLogService;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * 📌 제품 이벤트 로그 컨트롤러
+ */
+@RestController
+@RequestMapping("/producteventLog")
+@RequiredArgsConstructor
+public class ProductEventLogController {
+
+    private final ProductEventLogService productEventLogService;
+    
+    
+    /**
+     * 🚀 페이징 처리된 데이터 반환
+     */
+    @GetMapping("/paged")
+    public ResponseEntity<Page<ProductEventLogDTO>> getPagedLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(productEventLogService.getPagedLogs(pageable));
+    }
+    
+    
+    /**
+     * 🚀 모든 제품 이벤트 로그 조회
+     * @return 데이터베이스에 저장된 모든 제품 이벤트 로그 목록 반환
+     */
+    @GetMapping
+    public ResponseEntity<List<ProductEventLog>> getAllLogs() {
+        return ResponseEntity.ok(productEventLogService.findAllLogs());
+    }
+    
+    /**
+     * 🚀 ID 기반 단일 제품 이벤트 로그 조회
+     */
+    @GetMapping("/id/{id}")
+    public ResponseEntity<ProductEventLog> getLogById(@PathVariable Long id) {
+        return productEventLogService.findLogById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * 🚀 EPC 코드 기반 제품 이벤트 로그 조회
+     */
+    @GetMapping("/epc/{epcCode}")
+    public ResponseEntity<List<ProductEventLog>> getLogsByEpcCode(@PathVariable String epcCode) {
+        List<ProductEventLog> logs = productEventLogService.findLogsByEpcCode(epcCode);
+        return logs.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(logs);
+    }
+
+    
+
+    /**
+     * 🚀 허브별 물류량 조회 API
+     */
+    @GetMapping("/hub-statistics")
+    public ResponseEntity<List<ProductEventLogDTO>> getHubStatistics() {
+        return ResponseEntity.ok(productEventLogService.getPagedLogs(PageRequest.of(0, 100)).getContent());
+    }
+
+    /**
+     * 🚀 날짜별 이상 탐지 발생 통계 API
+     */
+    @GetMapping("/anomaly-daily-statistics")
+    public ResponseEntity<List<ProductEventLogDTO>> getAnomalyDailyStatistics() {
+        return ResponseEntity.ok(productEventLogService.getPagedLogs(PageRequest.of(0, 100)).getContent());
+    }
+
+    /**
+     * 🚀 EPC 데이터 조회 API
+     */
+    @GetMapping("/epc-data")
+    public ResponseEntity<List<ProductEventLogDTO>> getEPCData() {
+        return ResponseEntity.ok(productEventLogService.getPagedLogs(PageRequest.of(0, 100)).getContent());
+    }
+
+    /**
+     * 🚀 허브별 이상 탐지 리스트 조회 API
+     */
+    @GetMapping("/anomalies-by-hub")
+    public ResponseEntity<List<ProductEventLogDTO>> getAnomaliesByHub(@RequestParam String hubName) {
+        return ResponseEntity.ok(productEventLogService.getPagedLogs(PageRequest.of(0, 100)).getContent());
+    }
+
+    /**
+     * 🚀 특정 EPC 코드 이동 경로 추적 API
+     */
+    @GetMapping("/tracking/{epcCode}")
+    public ResponseEntity<List<ProductEventLog>> trackProductMovement(@PathVariable String epcCode) {
+        return ResponseEntity.ok(productEventLogService.findLogsByEpcCode(epcCode));
+    }
+
+    /**
+     * 🚀 실시간 물류 데이터 조회 API
+     */
+    @GetMapping("/realtime")
+    public ResponseEntity<List<ProductEventLogDTO>> getRealTimeSCMData() {
+        return ResponseEntity.ok(productEventLogService.getPagedLogs(PageRequest.of(0, 10)).getContent());
+    }
+
+    /**
+     * 🚀 실시간 WebSocket 기반 물류 이벤트 스트리밍 API
+     */
+    @PostMapping("/realtime/websocket")
+    public ResponseEntity<Void> sendRealTimeSCMDataToWebSocket() {
+        return ResponseEntity.ok().build();
+    }
+    
+    /**
+     * ✅ 문자열을 Date 타입으로 변환하는 유틸리티 메서드
+     * @param dateStr 변환할 날짜 문자열
+     * @return 변환된 Date 객체 (형식이 잘못된 경우 null 반환)
+     */
+    private Date parseDate(String dateStr) {
+        try {
+            return dateStr != null && !dateStr.isEmpty()
+                    ? new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dateStr) // 지정된 형식으로 변환
+                    : null;
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+}

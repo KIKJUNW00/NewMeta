@@ -3,6 +3,8 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="true"/>
 	<list key="searchhistory">
+		<item value="CommunityPost"/>
+		<item value="880"/>
 		<item value="HubName"/>
 		<item value="jackson-databind"/>
 		<item value="fasterxml"/>
@@ -16,9 +18,9 @@
 		<item value="findByEpcCode"/>
 		<item value="detectAnomalies"/>
 		<item value="io.socket"/>
-		<item value="isDomesticProduct"/>
 	</list>
 	<list key="replacehistory">
+		<item value="ScmCommunity"/>
 		<item value="HubType"/>
 		<item value="anomalyLogRepo"/>
 		<item value="anomalyLogRepository"/>
