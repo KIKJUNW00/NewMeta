@@ -4,7 +4,7 @@ import Sidebar from '../Util/DashBoardUtil/Sidebar';
 import { Routes, Route } from 'react-router-dom';
 import DashBoard from '../Pages/DashBoard';
 import SCM from './SCM'
-import Page3 from '../Pages/Page3'
+import Outlier from './Outlier'
 
 export default function AdminPage() {
 
@@ -50,7 +50,7 @@ export default function AdminPage() {
             {/* 다른 경로도 필요하면 여기에 추가 */}
             <Route path="dashboard" element={<DashBoard />} />
             <Route path="scm" element={<SCM />} />
-            <Route path="page3" element={<Page3 />} />
+            <Route path="outlier" element={<Outlier />} />
           </Routes>
         </div>
 

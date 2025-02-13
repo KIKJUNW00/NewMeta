@@ -91,7 +91,7 @@ export default function Sidebar() {
         {/* 2번 컨텐츠 */}
         <div className="bg-[#2e3b4e] transition-colors hover:bg-[#3a4a63] flex items-center w-full h-16">
           <NavLink
-            to="/AdminPage/SCM"
+            to="/AdminPage/scm"
             className={({ isActive }) =>
               isActive
                 ? 'bg-[#3a4a63] w-full h-full flex items-center justify-center'
@@ -108,7 +108,7 @@ export default function Sidebar() {
         {/* 3번 컨텐츠 */}
         <div className="bg-[#2e3b4e] transition-colors hover:bg-[#3a4a63] flex items-center w-full h-16">
           <NavLink
-            to="/AdminPage/page3"
+            to="/AdminPage/outlier"
             className={({ isActive }) =>
               isActive
                 ? 'bg-[#3a4a63] w-full h-full flex items-center justify-center'
@@ -117,7 +117,7 @@ export default function Sidebar() {
           >
             <p className='text-white  text-xl'
             >
-              HOME
+              이상치
             </p>
           </NavLink>
         </div>
