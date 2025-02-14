@@ -11,24 +11,24 @@ import { AnomalyProvider } from '../Util/OutlierUtil/AnomalyContext';
 export default function AdminPage() {
 
   // 관리자이름 가져오기
-  const location = useLocation();
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('userData');
-    return savedUser ? JSON.parse(savedUser) : location.state?.userData || { username: '' };
-  });
+  // const location = useLocation();
+  // const [user, setUser] = useState(() => {
+  //   const savedUser = localStorage.getItem('userData');
+  //   return savedUser ? JSON.parse(savedUser) : location.state?.userData || { username: '' };
+  // });
 
-  useEffect(() => {
-    if (!user.username) {
-      const savedUser = localStorage.getItem('userData');
-      if (savedUser) {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser); // localStorage에서 가져온 값으로 업데이트
-        console.log('로컬 스토리지에서 유저 데이터 로드:', parsedUser);
-      } else {
-        console.log('유저 데이터가 없습니다. 로그인 필요.');
-      }
-    }
-  }, [user.username]);
+  // useEffect(() => {
+  //   if (!user.username) {
+  //     const savedUser = localStorage.getItem('userData');
+  //     if (savedUser) {
+  //       const parsedUser = JSON.parse(savedUser);
+  //       setUser(parsedUser); // localStorage에서 가져온 값으로 업데이트
+  //       console.log('로컬 스토리지에서 유저 데이터 로드:', parsedUser);
+  //     } else {
+  //       console.log('AdminPage 유저 데이터가 없습니다. 로그인 필요.');
+  //     }
+  //   }
+  // }, [user.username]);
 
 
   // -------------------------------------------------------------------------

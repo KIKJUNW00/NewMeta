@@ -21,7 +21,7 @@ export default function MyPage() {
 
     const fetchPosts = async () => {
         try {
-          const response = await axios.get("http://10.125.121.228:8080/community/posts");
+          const response = await axios.get("http://10.125.121.228:8080/community/all-posts");
           const filteredPosts = response.data.map((post) => ({
             ...post,
             admin: { username: post.admin.username },  // admin 객체에서 username만 남김

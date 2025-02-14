@@ -8,16 +8,18 @@ import Clock from '../DashBoardUtil/Clock';
 import { AnomalyContext } from '../OutlierUtil/AnomalyContext';
 
 export default function Sidebar() {
-
   const { newAnomaly, setNewAnomaly } = useContext(AnomalyContext);
 
   const navigate = useNavigate();
 
+  const [userName, setUserName] = useState(false);
   // 로그인 상태 관리
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   // 컴포넌트 마운트 시 로그인 상태 확인
   useEffect(() => {
     if (localStorage.getItem('authToken')) {
+      setUserName(localStorage.getItem('username'));
       setIsLoggedIn(true);
     } else {
       setIsLoggedIn(false);
@@ -26,32 +28,32 @@ export default function Sidebar() {
 
   // 로그아웃 처리 함수
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
+    // localStorage.removeItem('authToken');
+    localStorage.clear();
     alert('로그아웃 완료')
     setIsLoggedIn(false);
     navigate('/');
   }
 
-  // 관리자이름 가져오기
-  const location = useLocation();
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('userData');
-    return savedUser ? JSON.parse(savedUser) : location.state?.userData || { username: '' };
-  });
+  // // 관리자이름 가져오기
+  // // const location = useLocation();
+  // const [user, setUser] = useState(() => {
+  //   const savedUser = localStorage.getItem('userData');
+  //   return savedUser ? JSON.parse(savedUser) : location.state?.userData || { username: '' };
+  // });
 
-  useEffect(() => {
-    if (!user.username) {
-      const savedUser = localStorage.getItem('userData');
-      if (savedUser) {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser); // localStorage에서 가져온 값으로 업데이트
-        console.log('로컬 스토리지에서 유저 데이터 로드:', parsedUser);
-      } else {
-        console.log('유저 데이터가 없습니다. 로그인 필요.');
-      }
-    }
-  }, [user.username]);
-
+  // useEffect(() => {
+  //   if (!user.username) {
+  //     const savedUser = localStorage.getItem('userData');
+  //     if (savedUser) {
+  //       const parsedUser = JSON.parse(savedUser);
+  //       setUser(parsedUser); // localStorage에서 가져온 값으로 업데이트
+  //       console.log('로컬 스토리지에서 유저 데이터 로드:', parsedUser);
+  //     } else {
+  //       console.log('Side Bar 유저 데이터가 없습니다. 로그인 필요.');
+  //     }
+  //   }
+  // }, [user.username]);
 
   return (
     <div className="flex flex-col h-full">
@@ -67,7 +69,7 @@ export default function Sidebar() {
       <div className='flex items-center justify-center
                       text-white'>
 
-        {user.username ? `${user.username}` : ''}
+        {userName}
 
       </div>
 

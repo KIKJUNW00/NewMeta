@@ -37,7 +37,7 @@ export default function Login() {
         'http://10.125.121.228:8080/login', //url
         loginData, // JSON 데이터로 보내기 //요청데이터
         {
-          withCredentials: true,
+          // withCredentials: true,
           headers: {
             'Content-Type': 'application/json'
           }
@@ -49,22 +49,28 @@ export default function Login() {
         alert('로그인 성공!');
         console.log('로그인 성공:', resp.data || '응답 데이터가 비어 있습니다.');
 
-        // 전역 상태에 로그인 반영
-        login(resp.headers.get('Authorization')); // 전역 상태에 토큰 저장
+        
 
         // JWT 토큰을 서버에서 응답으로 받았다고 가정
-        const jwtToken = resp.headers.get('Authorization');  // 서버에서 JWT 토큰을 받은 경우
+        const jwtToken = resp.headers['authorization'];
+        console.log('Authorization 헤더:', jwtToken );
+
+        // 전역 상태에 로그인 반영
+        login(jwtToken); // 전역 상태에 토큰 저장
+
+        if (!jwtToken) {
+          console.error('JWT 토큰이 비어 있습니다.');
+        }  // 서버에서 JWT 토큰을 받은 경우
         // JWT 토큰을 로컬 스토리지에 저장
         localStorage.setItem('authToken', jwtToken);
-
         // username을 로컬 스토리지에 저장
         localStorage.setItem('username', user.username);
 
 
         // 토큰이 성공적으로 저장되었음을 콘솔에 출력
-        // console.log("JWT 토큰:", jwtToken);
-        // console.log("유저이름: ", user.username);
-        navigate('/AdminPage/DashBoard', { state: { userData: { username: user.username } } });
+        console.log("JWT 토큰:", jwtToken);
+        //console.log("유저이름: ", user.username);
+        navigate('/AdminPage/dashBoard');
       }
     } catch (error) {
       if (error.response) {

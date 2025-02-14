@@ -5,6 +5,7 @@ import MapComponent2 from '../Util/DashBoardUtil/MapComponent2'
 // import CircleLegend from '../Util/DashBoardUtil/CircleLegend';
 import { Board } from '../Util/DashBoardUtil/Boards';
 import { BoardX } from '../Util/DashBoardUtil/Boards'
+import AllPostsBoard from '../Util/DashBoardUtil/AllPostsBoard';
 
 export default function DashBoard() {
 
@@ -67,9 +68,9 @@ export default function DashBoard() {
           {/* 윗쪽 오른쪽 섹션 일별이상치, 월별 이상치, 연도별 이상치 */}
           <div className="flex-1 border-solid border border-black
                         bg-gray-50 p-4 shadow">
-            <h2 className="text-lg font-bold text-gray-700">날짜별 이상치</h2>
+            <h2 className="text-lg font-bold text-gray-700">전체 피드백 게시판</h2>
                     
-            {/* <Chart1 /> */}
+            <AllPostsBoard/>
           </div>
 
         </div>

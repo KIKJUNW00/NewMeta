@@ -1,29 +1,51 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 
-export default function PostForm({ username, setPosts, posts }) {
+export default function PostForm({ setPosts, posts }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
+    const token = localStorage.getItem("authToken");
+    const username = localStorage.getItem("username");
+
+    if (!token || !username) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
     try {
-      const response = await axios.post("http://10.125.121.228:8080/community/posts", {
-        title,
-        content,
-        admin: { username },  // username만 전달
-      });
+      const response = await axios.post(
+        "http://10.125.121.228:8080/community/posts",
+        {
+          title,
+          content,
+          admin: { username },
+        },
+        {
+          headers: {
+            Authorization: token,
+          },
+        }
+      );
 
       const newPost = {
         ...response.data,
-        admin: response.data.admin.username,  // 응답에서 admin 객체를 admin.username만 유지
+        username: response.data.username,
       };
 
-      setPosts([newPost, ...posts]);  // 새 게시글을 기존 게시글 목록에 추가
+      // ✅ 상태 업데이트 및 리 렌더링
+      setPosts((prevPosts) => [newPost, ...prevPosts]);
       setTitle("");
       setContent("");
-      alert("피드백이 성공적으로 등록되었습니다.");
+
+      // ✅ 상태 업데이트 이후 알림 표시 및 새로고침
+      if (window.confirm("피드백이 성공적으로 등록되었습니다. 새로고침하시겠습니까?")) {
+        window.location.reload();  // 새로고침하여 전체 데이터 반영
+      }
+
     } catch (error) {
       console.error("게시글 등록 중 오류 발생:", error);
       if (error.response) {
