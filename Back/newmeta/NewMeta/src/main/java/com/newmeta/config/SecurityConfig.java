@@ -44,6 +44,7 @@ public class SecurityConfig { // 보안 설정 클래스
         http.authorizeHttpRequests(security -> security
                 .requestMatchers("/ws/**", "/ws-stomp/**").permitAll() // ✅ WebSocket 요청은 인증 없이 허용
                 .requestMatchers("/scm/data", "/scm/anomalies","/scm/hub-wise-data").permitAll() // ✅ 특정 API 엔드포인트 인증 없이 허용
+                .requestMatchers("/community/**").permitAll()
                 .requestMatchers("/login").permitAll() // ✅ 로그인 경로 허용
                 .requestMatchers("/scm/**").authenticated() // ✅ `/scm/` 경로는 인증 필요
                 .requestMatchers("/member/**").authenticated() // ✅ `/member/` 경로는 로그인한 사용자만 접근 가능

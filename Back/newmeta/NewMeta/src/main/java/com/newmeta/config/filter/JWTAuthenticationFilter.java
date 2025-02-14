@@ -52,6 +52,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             // ✅ 사용자명과 비밀번호를 기반으로 인증 토큰 생성
             Authentication authToken = new UsernamePasswordAuthenticationToken(admin.getUsername(), admin.getPassword());
 
+            
             // ✅ Spring Security의 AuthenticationManager를 통해 인증 수행
             return authenticationManager.authenticate(authToken);
 

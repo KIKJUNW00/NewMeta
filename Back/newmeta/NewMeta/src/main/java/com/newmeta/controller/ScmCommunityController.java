@@ -1,19 +1,17 @@
 package com.newmeta.controller;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.web.bind.annotation.*;
 
+import com.newmeta.domain.Admin;
 import com.newmeta.domain.ScmCommunity;
+import com.newmeta.domain.dto.ScmCommunityDTO;
+import com.newmeta.persistence.AdminRepository;
 import com.newmeta.service.ScmCommunityService;
 
 import lombok.RequiredArgsConstructor;
@@ -24,66 +22,67 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/community")
 @RequiredArgsConstructor
 public class ScmCommunityController {
-	
-	 private final ScmCommunityService scmCommunityService;
 
-	    /**
-	     * 게시글 생성 API
-	     * POST /community/posts
-	     */
-	    @PostMapping("/posts")
-	    public ResponseEntity<ScmCommunity> createPost(@RequestBody ScmCommunity scmCommunity) {
-	    	ScmCommunity created = scmCommunityService.createPost(scmCommunity);
-	        return ResponseEntity.ok(created);
-	    }
-	    
-	    @GetMapping("/my-posts")
-	    public List<ScmCommunity> getMyPosts() {
-	        return scmCommunityService.getMyPosts();  // 현재 사용자 게시글 반환
-	    }
+    private final ScmCommunityService scmCommunityService;
+    private final AdminRepository adminRepository;  // 🔥 AdminRepository 추가
 
-	    /**
-	     * 전체 게시글 조회 API
-	     * GET /community/posts
-	     */
-	    @GetMapping("/posts")
-	    public ResponseEntity<List<ScmCommunity>> getAllPosts() {
-	        List<ScmCommunity> posts = scmCommunityService.getAllPosts();
-	        return ResponseEntity.ok(posts);
-	    }
+    // 게시글 생성
+    @PostMapping("/posts")
+    public ResponseEntity<ScmCommunityDTO> createPost(@RequestBody ScmCommunity scmCommunity,
+                                                      @AuthenticationPrincipal User currentUser) {
+        // 🔥 User에서 username 가져오기
+        String username = currentUser.getUsername();
+        Admin admin = adminRepository.findById(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-	    /**
-	     * 게시글 단건 조회 API
-	     * GET /community/posts/{id}
-	     */
-	    @GetMapping("/posts/{id}")
-	    public ResponseEntity<ScmCommunity> getPostById(@PathVariable Long id) {
-	        Optional<ScmCommunity> postOpt = scmCommunityService.getPostById(id);
-	        return postOpt.map(ResponseEntity::ok)
-	                      .orElse(ResponseEntity.notFound().build());
-	    }
+        scmCommunityService.createPost(scmCommunity, admin);
+        return ResponseEntity.ok(ScmCommunityDTO.fromEntity(scmCommunity));
+    }
+    
+    @GetMapping("/all-posts")
+    public ResponseEntity<List<ScmCommunityDTO>> getAllPosts() {
+        List<ScmCommunity> allPosts = scmCommunityService.getAllPosts();
+        List<ScmCommunityDTO> response = allPosts.stream()
+                                                 .map(ScmCommunityDTO::fromEntity)
+                                                 .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
+    }
 
-	    /**
-	     * 게시글 수정 API
-	     * PUT /community/posts/{id}
-	     */
-	    @PutMapping("/posts/{id}")
-	    public ResponseEntity<ScmCommunity> updatePost(@PathVariable Long id, @RequestBody ScmCommunity updatedPost) {
-	    	ScmCommunity updated = scmCommunityService.updatePost(id, updatedPost);
-	        if (updated == null) {
-	            return ResponseEntity.notFound().build();
-	        }
-	        return ResponseEntity.ok(updated);
-	    }
+    // 내 게시글 조회
+    @GetMapping("/my-posts")
+    public ResponseEntity<List<ScmCommunityDTO>> getMyPosts(@AuthenticationPrincipal User currentUser) {
+        String username = currentUser.getUsername();
+        Admin admin = adminRepository.findById(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-	    /**
-	     * 게시글 삭제 API
-	     * DELETE /community/posts/{id}
-	     */
-	    @DeleteMapping("/posts/{id}")
-	    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
-	    	scmCommunityService.deletePost(id);
-	        return ResponseEntity.noContent().build();
-	    }
+        List<ScmCommunity> myPosts = scmCommunityService.getMyPosts(admin);
+        List<ScmCommunityDTO> response = myPosts.stream()
+                                               .map(ScmCommunityDTO::fromEntity)
+                                               .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
+    }
 
+    // 게시글 수정
+    @PutMapping("/posts/{id}")
+    public ResponseEntity<ScmCommunityDTO> updatePost(@PathVariable Long id, 
+                                                      @RequestBody ScmCommunity updatedPost, 
+                                                      @AuthenticationPrincipal User currentUser) {
+        String username = currentUser.getUsername();
+        Admin admin = adminRepository.findById(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        ScmCommunity updated = scmCommunityService.updatePost(id, updatedPost, admin);
+        return ResponseEntity.ok(ScmCommunityDTO.fromEntity(updated));
+    }
+
+    // 게시글 삭제
+    @DeleteMapping("/posts/{id}")
+    public ResponseEntity<Void> deletePost(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
+        String username = currentUser.getUsername();
+        Admin admin = adminRepository.findById(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        scmCommunityService.deletePost(id, admin);
+        return ResponseEntity.noContent().build();
+    }
 }
