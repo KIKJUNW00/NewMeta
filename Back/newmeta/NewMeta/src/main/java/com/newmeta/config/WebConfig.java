@@ -3,6 +3,7 @@ package com.newmeta.config; // 해당 설정 파일이 속한 패키지를 선�
 import org.springframework.context.annotation.Configuration; // 스프링 설정 클래스를 선언하는 어노테이션
 import org.springframework.web.servlet.config.annotation.CorsRegistry; // CORS 설정을 위한 클래스
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer; // 웹 MVC 설정 인터페이스
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 
 /**
  * 📌 Spring Boot CORS 설정 파일
@@ -33,4 +34,11 @@ public class WebConfig implements WebMvcConfigurer { // WebMvcConfigurer를 구�
                 .allowedMethods("GET", "POST", "OPTIONS") // WebSocket에서는 GET, POST, OPTIONS 허용
                 .allowCredentials(true); // WebSocket 요청에서도 인증 정보 포함 허용
     }
+    
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:" + System.getProperty("user.dir") + "/uploads/");
+    }
+
 }
