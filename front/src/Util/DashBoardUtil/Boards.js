@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 export function Board({ onProductClick }) {
     const [productData, setProductData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedEpc, setSelectedEpc] = useState(null); //  선택된 EPC 코드 상태
     const itemsPerPage = 5;
 
     useEffect(() => {
@@ -41,11 +42,11 @@ export function Board({ onProductClick }) {
                         if (!existingItem.latitude || !existingItem.longitude) {
                             uniqueDataMap.set(item.epcCode, item);
                         } else if (item.latitude && item.longitude) {
-                            uniqueDataMap.set(item.epcCode, item); 
+                            uniqueDataMap.set(item.epcCode, item);
                         }
                     }
                 });
-                
+
                 setProductData(Array.from(uniqueDataMap.values()));
             } catch (error) {
                 console.error("API 요청 오류:", error);
@@ -63,9 +64,9 @@ export function Board({ onProductClick }) {
 
     return (
         <>
-            <div className="relative overflow-x-auto mt-2 border border-black">
+            <div className="relative overflow-x-auto mt-2 border border-gray-300 rounded">
                 <table className="w-full min-w-[300px] text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-400 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th className="px-6 py-3">No</th>
                             <th className="px-6 py-3">Product Name</th>
@@ -74,14 +75,16 @@ export function Board({ onProductClick }) {
                     </thead>
                     <tbody>
                         {paginatedData.map((product, index) => (
-                            <tr 
-                                key={product.epcCode} 
-                                className="cursor-pointer hover:bg-gray-100"
-                                // onClick={() => {
-                                //     console.log("클릭한 EPC 코드:", product.epcCode); // 디버깅
-                                //     onProductClick(product.epcCode, productData); // EPC 코드 전달
-                                // }}
-                                onClick={() => onProductClick(product.epcCode)} // 클릭 시 epcCode 전달
+                            <tr
+                                key={product.epcCode}
+                                className={`cursor-pointer transition-colors duration-200 ${selectedEpc === product.epcCode
+                                    ? "bg-blue-200" //  클릭한 행은 연한 파랑 유지
+                                    : "hover:bg-gray-200" // 마우스를 올리면 회색
+                                    }`}
+                                onClick={() => {
+                                    setSelectedEpc(product.epcCode); //  클릭 시 선택 상태 업데이트
+                                    onProductClick(product.epcCode); //  부모 컴포넌트로 EPC 코드 전달
+                                }}
                             >
                                 <td className="px-6 py-4 truncate">{index + 1}</td>
                                 <td className="px-6 py-4 truncate">{product.productName}</td>
@@ -141,7 +144,9 @@ export function BoardX() {
         fetchData();
     }, []);
 
-    const totalPages = Math.ceil((productData.length || 1) / ITEMS_PER_PAGE);
+    // 총 페이지 수 계산 (0이면 최소 1페이지 보장)
+    const totalPages = Math.max(Math.ceil(productData.length / ITEMS_PER_PAGE), 1);
+
 
     const handlePageChange = (newPage) => {
         if (newPage > 0 && newPage <= totalPages) {
@@ -156,9 +161,9 @@ export function BoardX() {
 
     return (
         <>
-            <div className="relative overflow-x-auto mt-2 border border-black max-w-full">
+            <div className="relative overflow-x-auto mt-2 border border-gray-300 max-w-full">
                 <table className="w-full text-xs text-left text-gray-500 dark:text-gray-400 table-fixed">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-400 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th className="px-6 py-2 w-1/5">Product Name</th>
                             <th className="px-6 py-2 w-1/5">Anomaly Type</th>
@@ -168,11 +173,11 @@ export function BoardX() {
                         </tr>
                     </thead>
                     <tbody>
-                        {displayedData.map((item) => (
-                            <tr key={item.epcCode} className="bg-red-200 border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white truncate">
+                        {displayedData.map((item, index) => (
+                            <tr key={index} className="bg-red-200 border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white truncate">
                                     {item.anomalyProductName}
-                                </th>
+                                </td>
                                 <td className="px-6 py-4 truncate">{item.anomalyType}</td>
                                 <td className="px-6 py-4 truncate">{item.reason}</td>
                                 <td className="px-6 py-4 truncate">{item.anomalyTimestamp}</td>

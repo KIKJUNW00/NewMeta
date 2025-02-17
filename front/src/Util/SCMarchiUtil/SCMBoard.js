@@ -6,6 +6,7 @@ export function BoardSCM({ onProductClick }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [originFilter, setOriginFilter] = useState("all"); // "all", "domestic", "imported"
+  const [selectedEpc, setSelectedEpc] = useState(null); // ✅ 선택된 EPC 코드 상태
   const itemsPerPage = 8;
 
   useEffect(() => {
@@ -126,9 +127,9 @@ const filteredData = getUniqueData(productData).filter((product) => {
       </div>
 
 
-      <div className="relative overflow-x-auto mt-2 border border-black">
+      <div className="relative overflow-x-auto mt-2 border border-gray-300 rounded">
         <table className="w-full min-w-[300px] text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-400 dark:bg-gray-700 dark:text-gray-400">
             <tr>
               <th className="px-6 py-3">No</th>
               <th className="px-6 py-3">Product Name</th>
@@ -136,19 +137,25 @@ const filteredData = getUniqueData(productData).filter((product) => {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((product) => (
-              <tr
-                key={product.productEventLogId} // productEventLogId 사용
-                className="cursor-pointer hover:bg-gray-100"
-                onClick={() => handleProductClick(product.epcCode)}
-              >
-                <td className="px-6 py-4 truncate">{product.productEventLogId}</td>
-                <td className="px-6 py-4 truncate">{product.productName}</td>
-                <td className="px-6 py-4 truncate">{product.epcCode}</td>
-              </tr>
-            ))}
-          </tbody>
-
+          {paginatedData.map((product) => (
+            <tr
+              key={product.productEventLogId} //  productEventLogId 사용
+              className={`cursor-pointer transition-colors duration-200 bg-white ${
+                selectedEpc === product.epcCode
+                  ? "bg-blue-200" //  클릭한 행은 연한 파랑 유지
+                  : "hover:bg-gray-200" //  마우스를 올리면 회색
+              }`}
+              onClick={() => {
+                setSelectedEpc(product.epcCode); //  클릭 시 선택 상태 업데이트
+                handleProductClick(product.epcCode); //  EPC 코드 전달
+              }}
+            >
+              <td className="px-6 py-4 truncate">{product.productEventLogId}</td>
+              <td className="px-6 py-4 truncate">{product.productName}</td>
+              <td className="px-6 py-4 truncate">{product.epcCode}</td>
+            </tr>
+          ))}
+        </tbody>
         </table>
       </div>
 

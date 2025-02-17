@@ -65,11 +65,11 @@ const Chart1 = () => {
   };
 
   return (
-    <div>
+    <div className='bg-white pt-5 pl-2 border-gray-300 border rounded'>
       
       {/* ✅ 일별 차트 */}
       <div className="mb-2">
-        <h5 className="text-base text-left">일별 이상 탐지</h5>
+        <h5 className="text-base text-center">*일별 이상 탐지</h5>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart
             data={dailyData}
@@ -85,8 +85,8 @@ const Chart1 = () => {
       </div>
 
       {/* ✅ 월별 차트 */}
-      <div className="mb-8">
-        <h5 className="text-base text-left">월별 이상 탐지</h5>
+      <div className="mb-8 mt-2">
+        <h5 className="text-base text-center">*월별 이상 탐지</h5>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart
             data={monthlyData}

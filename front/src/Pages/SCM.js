@@ -21,7 +21,7 @@ export default function SCMDashboard() {
         <div className="flex flex-1">
           {/* 왼쪽 필터/제품 카테고리 영역 */}
           <div className="w-[35%] border border-gray-300 bg-gray-50 p-4 mr-4 rounded min-h-[650px] max-h-[650px] flex-shrink-0">
-            <h2 className="text-lg font-bold text-gray-700 mb-2">Product Category</h2>
+            <h2 className="text-lg font-bold text-gray-700 mb-2">제품 목록</h2>
             <div className="overflow-y-auto min-h-[650px] max-h-[650px]">
               <BoardSCM onProductClick={handleProductClick} />
             </div>
@@ -46,9 +46,9 @@ export default function SCMDashboard() {
 
 
 
-        {/* 하단 그래프 영역 */}
+        {/* 하단 영역 */}
         <div className="flex mt-4 flex-1">
-          <div className="w-full h-full lg:w-1/3 px-2 mb-4 flex-1">
+          <div className="flex flex-col flex-1 border border-gray-300 bg-gray-50 p-4 rounded min-h-[500px]">
             <HubData />
           </div>
 

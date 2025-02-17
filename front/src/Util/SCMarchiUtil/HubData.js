@@ -24,7 +24,7 @@ export default function HubData() {
   }, []);
 
   return (
-    <div className="overflow-auto bg-white w-full h-full shadow-lg p-6 flex flex-col">
+    <div className=" overflow-auto w-full h-full p-6 flex flex-col ">
       <h2 className="text-lg font-bold text-gray-700 mb-4">허브별 물류 요약</h2>
 
       {/* 전체 물류량 요약 카드 */}

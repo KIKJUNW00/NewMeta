@@ -108,11 +108,11 @@ useEffect(() => {
   //  CSV 다운로드 핸들러 (BOM 추가하여 한글 인코딩 문제 해결)
   const handleDownloadCSV = () => {
     // CSV 헤더 행 정의 (표시될 컬럼명)
-    const headers = ["Product Name", "Anomaly Type", "Reason", "Timestamp", "Hub"];
+    const headers = ["Product epcCode", "Anomaly Type", "Reason", "Timestamp", "Hub"];
 
     // productData 배열을 순회하며 CSV 각 행 데이터 생성
     const rows = productData.map((item) => [
-      item.anomalyProductName,
+      item.epcCode,
       item.anomalyType,
       item.reason,
       item.anomalyTimestamp,
@@ -152,7 +152,7 @@ useEffect(() => {
         <table className="w-full text-sm text-left text-gray-700 border-collapse">
           <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
             <tr>
-              <th className="px-6 py-3 w-1/5">Product Name</th>
+              <th className="px-6 py-3 w-1/5">Product epcCode</th>
               <th className="px-6 py-3 w-1/5">Anomaly Type</th>
               <th className="px-6 py-3 w-[30%]">Reason</th>
               <th className="px-6 py-3 w-1/5">Timestamp</th>
@@ -163,7 +163,7 @@ useEffect(() => {
             {displayedData.length > 0 ? (
               displayedData.map((item, index) => (
                 <tr key={index} className="bg-white border-b hover:bg-gray-100">
-                  <td className="px-6 py-4">{item.anomalyProductName}</td>
+                  <td className="px-6 py-4">{item.epcCode}</td>
                   <td className="px-6 py-4">{item.anomalyType}</td>
                   <td className="px-6 py-4">{item.reason}</td>
                   <td className="px-6 py-4">{item.anomalyTimestamp}</td>

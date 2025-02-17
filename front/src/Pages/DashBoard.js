@@ -49,7 +49,7 @@ export default function DashBoard() {
         <div className="flex space-x-4 h-1/2">
 
           {/* 윗쪽 왼쪽 섹션 HUB별 지도 product 분포표 */}
-          <div className="flex w-[40%] h-full border-solid border border-black
+          <div className="flex w-[40%] h-full border-solid border border-gray-300
                          bg-gray-50 p-4 shadow">
             <div className='w-full h-full flex flex-col'>
               <div className='flex justify-between pb-2'>
@@ -58,7 +58,7 @@ export default function DashBoard() {
                   <CircleLegend />
                 </div> */}
               </div>
-              <div className="flex border-solid border border-black
+              <div className="flex border-solid border border-gray-600 rounded
                               overflow-hidden">
                 <MapComponent />
               </div>
@@ -66,7 +66,7 @@ export default function DashBoard() {
           </div>
 
           {/* 윗쪽 오른쪽 섹션 일별이상치, 월별 이상치, 연도별 이상치 */}
-          <div className="flex-1 border-solid border border-black
+          <div className="flex-1 border rounded border-gray-300
                         bg-gray-50 p-4 shadow">
             <h2 className="text-lg font-bold text-gray-700">전체 피드백 게시판</h2>
                     
@@ -79,7 +79,7 @@ export default function DashBoard() {
         <div className="flex space-x-4 h-1/2">
 
           {/* 왼쪽 아래 epc데이터 */}
-          <div className="flex-1 border-solid border border-black
+          <div className="flex-1 border-solid border border-gray-300 rounded
                         bg-gray-50 p-4 shadow">
 
             <div className='flex-1 flex-col'>
@@ -91,11 +91,11 @@ export default function DashBoard() {
           </div>
 
           {/* 오른쪽중간 epc데이터 누르면 scm과정 */}
-          <div className="flex-1 border-solid border border-black
+          <div className="flex-1 border-solid border border-gray-300 rounded
                         bg-gray-50 p-4 shadow">
             <div className='flex flex-col '>
               <h2 className="text-lg font-bold text-gray-700">SCM</h2>
-              <div className="flex-1 border-solid border border-black
+              <div className="flex-1 border-solid border border-gray-600 rounded
                               overflow-hidden">
 
                 <MapComponent2 readPoints={eventLogData} selectedEpcCode={selectedEpcCode} />
@@ -105,7 +105,7 @@ export default function DashBoard() {
           </div>
 
           {/* 오른쪽 아래 이상치 리스트만 띄우기 */}
-          <div className="flex-1 border-solid border border-black
+          <div className="flex-1 border-solid border border-gray-300 rounded
                         bg-gray-50 p-4 shadow">
 
             <div className='flex-1 flex-col'>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { useNavigate } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import logo1 from '../../img/logo1.png';
 import logout from '../../img/logout.png';
@@ -66,17 +65,20 @@ export default function Sidebar() {
       </div>
 
       {/* 프로필 */}
-      <div className='flex items-center justify-center
+      <div className='flex items-center justify-center mt-5
                       text-white'>
 
-        {userName}
+        <div>
+
+          {userName}
+        </div>
 
       </div>
 
 
       {/* 중간 메뉴 */}
-      <div className="flex-1">
-        
+      <div className="flex-1 mt-14">
+
         {/* 1번 컨텐츠 */}
         <div className="bg-[#2e3b4e] transition-colors hover:bg-[#3a4a63] flex items-center w-full h-16">
           <NavLink
@@ -125,7 +127,7 @@ export default function Sidebar() {
             <div className="relative flex items-center">
               <p className="text-white text-xl">
                 이상치
-                {newAnomaly && <span className="ml-2 text-red-500 font-bold">!</span>}
+                {newAnomaly && <span className="ml-2 text-red-500 font-bold">⚠️</span>}
               </p>
             </div>
           </NavLink>

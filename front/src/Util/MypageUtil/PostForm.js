@@ -36,12 +36,12 @@ export default function PostForm({ setPosts, posts }) {
         username: response.data.username,
       };
 
-      // ✅ 상태 업데이트 및 리 렌더링
+      //  상태 업데이트 및 리 렌더링
       setPosts((prevPosts) => [newPost, ...prevPosts]);
       setTitle("");
       setContent("");
 
-      // ✅ 상태 업데이트 이후 알림 표시 및 새로고침
+      //  상태 업데이트 이후 알림 표시 및 새로고침
       if (window.confirm("피드백이 성공적으로 등록되었습니다. 새로고침하시겠습니까?")) {
         window.location.reload();  // 새로고침하여 전체 데이터 반영
       }
