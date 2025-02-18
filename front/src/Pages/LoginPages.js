@@ -151,7 +151,7 @@ export default function Login() {
                 value={user.password}
                 onChange={handleChange}
               />
-              <p className='mb-10 text-left ml-16 text-red-500 '>비밀번호를 입력하세요</p>
+              {/* <p className='mb-10 text-left ml-16 text-red-500 '>비밀번호를 입력하세요</p> */}
               <button
                 type="submit"
                 className="bg-blue-500 text-white

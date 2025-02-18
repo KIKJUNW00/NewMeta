@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext  } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import AnomalyModal from "./AnomalyModal";
@@ -35,36 +35,40 @@ export default function OutlierBoard() {
   }, []);
 
   // SockJS와 STOMP를 이용한 WebSocket 연결을 통한 실시간 이상 탐지 데이터 수신
-
-  // OutlierBoard.js
-useEffect(() => {
-  const socket = new SockJS("http://10.125.121.228:8080/ws-stomp");
-  const stompClient = new Client({
-    webSocketFactory: () => socket,
-    reconnectDelay: 5000,
-    onConnect: () => {
-      console.log("STOMP WebSocket connection established.");
-      stompClient.subscribe("/topic/anomalyAlerts", (message) => {
-        console.log("STOMP message received:", message.body);
-        try {
-          const newEvent = JSON.parse(message.body);
-          if (Array.isArray(newEvent) && newEvent.length > 0) {
-            setProductData((prevData) => [newEvent[0], ...prevData]);
-            setNewAnomaly(true);  // Update newAnomaly to true
+  useEffect(() => {
+    const socket = new SockJS("http://10.125.121.228:8080/ws-stomp");
+    const stompClient = new Client({
+      webSocketFactory: () => socket,
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log("STOMP WebSocket 연결 성공");
+        stompClient.subscribe("/topic/anomalyAlerts", (message) => {
+          console.log("STOMP 메시지 수신:", message.body);
+          try {
+            const newEvent = JSON.parse(message.body);
+            if (Array.isArray(newEvent) && newEvent.length > 0) {
+              setProductData((prevData) => [newEvent[0], ...prevData]);
+  
+              // 상태 업데이트 (전역 상태 + localStorage)
+              setNewAnomaly(true);
+              localStorage.setItem("newAnomaly", JSON.stringify(true));
+            }
+          } catch (err) {
+            console.error("STOMP 메시지 파싱 오류:", err);
           }
-        } catch (err) {
-          console.error("Error parsing STOMP message:", err);
-        }
-      });
-    },
-    onStompError: (frame) => {
-      console.error("STOMP error:", frame);
-    },
-  });
-  stompClient.activate();
+        });
+      },
+      onStompError: (frame) => {
+        console.error("STOMP 오류 발생:", frame);
+      },
+    });
+  
+    stompClient.activate();
+  
+    return () => stompClient.deactivate();
+  }, [setNewAnomaly]);
+  
 
-  return () => stompClient.deactivate();
-}, [setNewAnomaly]);
 
 
   //  전체 페이지 수 계산
@@ -90,10 +94,10 @@ useEffect(() => {
           })
         )
       );
-  
+
       // 삭제된 항목을 제외하고 상태 업데이트
       setProductData((prevData) => prevData.filter((item) => !selectedAnomalies.includes(item.anomalyId)));
-      
+
       // 선택 항목 초기화
       setSelectedAnomalies([]);
       toggleModal();
@@ -103,7 +107,7 @@ useEffect(() => {
       alert("삭제 중 오류가 발생했습니다.");
     }
   };
-  
+
 
   //  CSV 다운로드 핸들러 (BOM 추가하여 한글 인코딩 문제 해결)
   const handleDownloadCSV = () => {

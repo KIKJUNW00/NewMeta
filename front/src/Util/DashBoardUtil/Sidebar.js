@@ -34,25 +34,13 @@ export default function Sidebar() {
     navigate('/');
   }
 
-  // // 관리자이름 가져오기
-  // // const location = useLocation();
-  // const [user, setUser] = useState(() => {
-  //   const savedUser = localStorage.getItem('userData');
-  //   return savedUser ? JSON.parse(savedUser) : location.state?.userData || { username: '' };
-  // });
+  useEffect(() => {
+    const storedAnomaly = JSON.parse(localStorage.getItem("newAnomaly"));
+    if (storedAnomaly) {
+      setNewAnomaly(true);
+    }
+  }, [setNewAnomaly]);
 
-  // useEffect(() => {
-  //   if (!user.username) {
-  //     const savedUser = localStorage.getItem('userData');
-  //     if (savedUser) {
-  //       const parsedUser = JSON.parse(savedUser);
-  //       setUser(parsedUser); // localStorage에서 가져온 값으로 업데이트
-  //       console.log('로컬 스토리지에서 유저 데이터 로드:', parsedUser);
-  //     } else {
-  //       console.log('Side Bar 유저 데이터가 없습니다. 로그인 필요.');
-  //     }
-  //   }
-  // }, [user.username]);
 
   return (
     <div className="flex flex-col h-full">
@@ -122,7 +110,10 @@ export default function Sidebar() {
                 ? 'bg-[#3a4a63] w-full h-full flex items-center justify-center'
                 : 'w-full h-full flex items-center justify-center'
             }
-            onClick={() => setNewAnomaly(false)}
+            onClick={() => {
+              setNewAnomaly(false);
+              localStorage.setItem("newAnomaly", JSON.stringify(false));
+            }}
           >
             <div className="relative flex items-center">
               <p className="text-white text-xl">
