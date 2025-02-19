@@ -80,7 +80,7 @@ export default function ProfileSection({ userData }) {
   
       console.log("이미지 업로드 중...");
   
-      const uploadResponse = await fetch(`http://10.125.121.228:8080/admin/${username}/upload-photo`, {
+      const uploadResponse = await fetch(`http://localhost:8080/admin/${username}/upload-photo`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -97,15 +97,15 @@ export default function ProfileSection({ userData }) {
       }
   
       // **절대 경로로 변환**
-      const imageUrl = `http://10.125.121.228:8080${uploadData.photo}`;
+      const imageUrl = `http://localhost:8080${uploadData.photo}`;
       console.log("업로드된 이미지 URL:", imageUrl);
   
       setProfilePhoto(imageUrl); // UI에서 프로필 사진 갱신
   
       // 2. 사용자 정보 업데이트 요청
-      console.log(`Updating profile at: http://10.125.121.228:8080/admin/${username}`);
+      console.log(`Updating profile at: http://localhost:8080/admin/${username}`);
   
-      const updateResponse = await fetch(`http://10.125.121.228:8080/admin/${username}`, {
+      const updateResponse = await fetch(`http://localhost:8080/admin/${username}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -125,7 +125,7 @@ export default function ProfileSection({ userData }) {
         alert("프로필이 성공적으로 업데이트되었습니다!");
   
         // **최종 업데이트된 프로필 이미지 적용**
-        const updatedImageUrl = `http://10.125.121.228:8080${updateData.photo}`;
+        const updatedImageUrl = `http://localhost:8080${updateData.photo}`;
         console.log("최종 반영된 이미지 URL:", updatedImageUrl);
   
         setProfilePhoto(updatedImageUrl); // UI 업데이트
