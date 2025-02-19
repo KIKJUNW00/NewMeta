@@ -165,7 +165,7 @@
  ## 7. 발표자료
 <br>
 
- - https://www.miricanvas.com/v/144pl5b
+ - https://docs.google.com/presentation/d/1P4cP2yNFzzG4NG2Uh7SQQ_Irst0aEkC4/edit?usp=drive_link&ouid=105082396347888966096&rtpof=true&sd=true
 
 
 ## 8. 참고
