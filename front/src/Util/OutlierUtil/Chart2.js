@@ -6,7 +6,7 @@ const Chart1 = () => {
   const [dailyData, setDailyData] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
 
-  const API_URL = 'http://10.125.121.228:8080/producteventLog';
+  const API_URL = 'http://localhost:8080/producteventLog';
 
   useEffect(() => {
     const fetchData = async () => {

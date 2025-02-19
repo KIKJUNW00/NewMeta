@@ -9,7 +9,7 @@ const Chart1 = () => {
   const [dailyData, setDailyData] = useState([]); //  일별 데이터
   const [monthlyData, setMonthlyData] = useState([]); //  월별 데이터
 
-  const API_URL = 'http://10.125.121.228:8080/producteventLog'; //  API 엔드포인트
+  const API_URL = 'http://localhost:8080/producteventLog'; //  API 엔드포인트
 
   useEffect(() => {
     const fetchData = async () => {

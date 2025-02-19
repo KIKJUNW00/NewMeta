@@ -33,7 +33,7 @@ const HubCircleChart = () => {
   const [hubCounts, setHubCounts] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6; // 한 페이지에 표시할 허브 개수
-  const API_URL = 'http://10.125.121.228:8080/anomalies/paged';
+  const API_URL = 'http://localhost:8080/anomalies/paged';
 
   useEffect(() => {
     const fetchData = async () => {

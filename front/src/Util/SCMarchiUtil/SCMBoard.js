@@ -17,7 +17,7 @@ export function BoardSCM({ onProductClick }) {
         let totalPages = 1;
 
         while (page < totalPages) {
-          const response = await fetch(`http://10.125.121.228:8080/producteventLog/paged?page=${page}&size=30`);
+          const response = await fetch(`http://localhost:8080/producteventLog/paged?page=${page}&size=30`);
           const data = await response.json();
 
           if (data && Array.isArray(data.content)) {

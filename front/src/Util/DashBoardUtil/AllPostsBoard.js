@@ -13,7 +13,7 @@ export default function AllPostsBoard() {
   // 전체 게시글 가져오기
   const fetchAllPosts = async () => {
     try {
-      const response = await axios.get("http://10.125.121.228:8080/community/all-posts", {
+      const response = await axios.get("http://localhost:8080/community/all-posts", {
         headers: {
           Authorization: token,
         },

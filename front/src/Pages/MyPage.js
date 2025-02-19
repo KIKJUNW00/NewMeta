@@ -11,7 +11,7 @@ export default function MyPage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axios.get("http://10.125.121.228:8080/admin");
+        const response = await axios.get("http://localhost:8080/admin");
         const loggedInUser = response.data.find(user => user.username); // 예시로 admin 사용
         setUserData(loggedInUser);
       } catch (error) {
@@ -21,7 +21,7 @@ export default function MyPage() {
 
     const fetchPosts = async () => {
       try {
-        const response = await axios.get("http://10.125.121.228:8080/community/all-posts");
+        const response = await axios.get("http://localhost:8080/community/all-posts");
         const filteredPosts = response.data.map((post) => ({
           ...post,
           admin: { username: post.admin.username },  // admin 객체에서 username만 남김

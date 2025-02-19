@@ -17,7 +17,7 @@ export default function OutlierBoard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("http://10.125.121.228:8080/anomalies/paged");
+        const response = await fetch("http://localhost:8080/anomalies/paged");
         const data = await response.json();
         console.log("Fetched data:", data); // 초기 데이터 확인용 로그
 
@@ -36,7 +36,7 @@ export default function OutlierBoard() {
 
   // SockJS와 STOMP를 이용한 WebSocket 연결을 통한 실시간 이상 탐지 데이터 수신
   useEffect(() => {
-    const socket = new SockJS("http://10.125.121.228:8080/ws-stomp");
+    const socket = new SockJS("http://localhost:8080/ws-stomp");
     const stompClient = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,

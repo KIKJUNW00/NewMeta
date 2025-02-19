@@ -6,7 +6,7 @@ export default function ProfileSection({ userData }) {
   const username = localStorage.getItem("username");
 
   const [profilePhoto, setProfilePhoto] = useState(
-    userData.photo ? `http://10.125.121.228:8080${userData.photo}` : "https://via.placeholder.com/100"
+    userData.photo ? `http://localhost:8080${userData.photo}` : "https://via.placeholder.com/100"
   );
   
   const [selectedFile, setSelectedFile] = useState(null);
@@ -15,7 +15,7 @@ export default function ProfileSection({ userData }) {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch(`http://10.125.121.228:8080/admin/${username}`, {
+        const response = await fetch(`http://localhost:8080/admin/${username}`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -29,7 +29,7 @@ export default function ProfileSection({ userData }) {
 
           // 최신 프로필 사진 적용
           if (userData.photo) {
-            setProfilePhoto(`http://10.125.121.228:8080${userData.photo}`);
+            setProfilePhoto(`http://localhost:8080${userData.photo}`);
           }
         } else {
           console.error("사용자 정보 불러오기 실패");

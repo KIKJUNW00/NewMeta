@@ -18,7 +18,7 @@ export default function PostForm({ setPosts, posts }) {
 
     try {
       const response = await axios.post(
-        "http://10.125.121.228:8080/community/posts",
+        "http://localhost:8080/community/posts",
         {
           title,
           content,

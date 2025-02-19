@@ -14,7 +14,7 @@ const anomalyTypes = [
 const AnomalyTypeCircleChart = () => {
   const [anomalyCounts, setAnomalyCounts] = useState({});
 
-  const API_URL = 'http://10.125.121.228:8080/anomalies/paged';
+  const API_URL = 'http://localhost:8080/anomalies/paged';
 
   useEffect(() => {
     const fetchData = async () => {

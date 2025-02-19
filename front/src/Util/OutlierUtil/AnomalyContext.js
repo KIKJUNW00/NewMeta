@@ -14,7 +14,7 @@ export const AnomalyProvider = ({ children }) => {
   }, [newAnomaly]);
 
   useEffect(() => {
-    const socket = new SockJS("http://10.125.121.228:8080/ws-stomp");
+    const socket = new SockJS("http://localhost:8080/ws-stomp");
     const stompClient = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,

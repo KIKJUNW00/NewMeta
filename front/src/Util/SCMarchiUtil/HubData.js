@@ -10,7 +10,7 @@ export default function HubData() {
   useEffect(() => {
     const fetchHubData = async () => {
       try {
-        const response = await fetch("http://10.125.121.228:8080/scm/hub-wise-data");
+        const response = await fetch("http://localhost:8080/scm/hub-wise-data");
         const result = await response.json();
         setHubData(result.hubWiseData || {});
         setDomesticTotal(result.domestic_total || 0);

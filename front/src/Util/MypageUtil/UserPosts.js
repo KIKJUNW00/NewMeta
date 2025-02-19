@@ -11,7 +11,7 @@ export default function UserPosts({ setPosts }) {
 
   const fetchMyPosts = async () => {
     try {
-      const response = await axios.get("http://10.125.121.228:8080/community/my-posts", {
+      const response = await axios.get("http://localhost:8080/community/my-posts", {
         headers: {
           Authorization: token,
         },
@@ -29,7 +29,7 @@ export default function UserPosts({ setPosts }) {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://10.125.121.228:8080/community/posts/${id}`, {
+      await axios.delete(`http://localhost:8080/community/posts/${id}`, {
         headers: {
           Authorization: token,
         },
@@ -47,7 +47,7 @@ export default function UserPosts({ setPosts }) {
 
     try {
       await axios.put(
-        `http://10.125.121.228:8080/community/posts/${selectedPost.id}`,
+        `http://localhost:8080/community/posts/${selectedPost.id}`,
         {
           title: selectedPost.title,
           content: selectedPost.content,
