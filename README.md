@@ -14,7 +14,7 @@
  3. 유통과정에서 데이터 오류 및 불일치 문제
  4. 이상데이터 실시간 탐지를 대응하지 못하게 되는 문제점을 야기합니다.
  이러한 문제점을 해결하기 위해서 지능형 SCM위변조 탐지 시스템의 필요성을 느끼게 되어 NEWMETA 프젝트를 기획하게 되었습니다.
- 
+
 <br>
 
 ## 팀원 구성
@@ -24,7 +24,7 @@
 | **김준우** | **류승진** | **김준영** |
 | :------: | :------: | :------: |
 | **FE** | **Data** | **BE** |
-| [<img src="/frontend/src/Image/KakaoTalk_20241017_113806726.jpg" height=150 width=150> <br/> @KIKJUNW0](https://github.com/KIKJUNW00) | [<img src="/frontend/src/Image/승진이형사진.jpg" height=150 width=150> <br/> @lenoau](https://github.com/lenoau) |[<img src="/frontend/src/Image/준영이사진.jpg" height=150 width=150> <br/> @zeromile-000](https://github.com/zeromile-000) |
+| [<img src="./front/src/img/KakaoTalk_20241017_113806726.jpg" height=150 width=150> <br/> @KIKJUNW0](https://github.com/KIKJUNW00) | [<img src="./front/src/img/승진이형사진.jpg" height=150 width=150> <br/> @lenoau](https://github.com/lenoau) |[<img src="./front/src/img/준영이사진.jpg" height=150 width=150> <br/> @zeromile-000](https://github.com/zeromile-000) |
 
 
 </div>
