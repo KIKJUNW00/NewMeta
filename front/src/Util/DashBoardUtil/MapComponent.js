@@ -9,7 +9,7 @@ export default function HubWiseBubbleMap() {
   useEffect(() => {
     const fetchHubData = async () => {
       try {
-        const response = await fetch('http://10.125.121.228:8080/scm/hub-wise-data');
+        const response = await fetch('http://localhost:8080/scm/hub-wise-data');
         const data = await response.json();
         setHubData(data?.hubWiseData || {});
       } catch (error) {

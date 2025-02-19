@@ -128,7 +128,7 @@ export function BoardX() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch("http://10.125.121.228:8080/anomalies/paged");
+                const response = await fetch("http:/localhost:8080/anomalies/paged");
                 const data = await response.json();
                 console.log("Fetched data:", data);
 
