@@ -2,7 +2,7 @@
 🔎바코드 위조 및 일련번호 추적 시스템
 
 
-![readme_mockup2](./front/src/img/image5.png)
+![readme_mockup2](./image5.png)
 
 <br>
 
